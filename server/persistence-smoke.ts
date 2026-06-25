@@ -1,10 +1,10 @@
-import { spawn, type ChildProcess } from "node:child_process";
+﻿import { spawn, type ChildProcess } from "node:child_process";
 import { appendFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-persistence-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-persistence-smoke-"));
 const port = 62031;
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
 
@@ -80,9 +80,9 @@ function startServer() {
     cwd: rootDir,
     env: {
       ...process.env,
-      VECTOR_FORGE_ROOT_DIR: rootDir,
-      VECTOR_FORGE_DATA_DIR: tempDir,
-      VECTOR_FORGE_PORT: String(port),
+      KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+      KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+      KNOWLEDGE_FORGE_PORT: String(port),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });

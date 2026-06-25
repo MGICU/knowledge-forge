@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+﻿import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { createServer as createNetServer } from "node:net";
 import os from "node:os";
@@ -7,7 +7,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-mcp-write-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-mcp-write-smoke-"));
 const token = "mcp-write-smoke-local-action-token";
 const collectionSlug = "mcp-write-smoke";
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
@@ -74,7 +74,7 @@ function needsToken(method: string | undefined) {
 
 function requestHeaders(init: RequestInit = {}) {
   const headers = new Headers(init.headers);
-  if (needsToken(init.method)) headers.set("X-Vector-Forge-Local-Action-Token", token);
+  if (needsToken(init.method)) headers.set("X-knowledge-forge-Local-Action-Token", token);
   if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   return headers;
 }
@@ -144,11 +144,11 @@ async function connectMcpClient(name: string) {
     stderr: "pipe",
     env: {
       ...process.env,
-      VECTOR_FORGE_ROOT_DIR: rootDir,
-      VECTOR_FORGE_DATA_DIR: tempDir,
-      VECTOR_FORGE_API_URL: apiBaseUrl,
-      VECTOR_FORGE_MCP_AUTOSTART: "false",
-      VECTOR_FORGE_LOCAL_ACTION_TOKEN: token,
+      KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+      KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+      KNOWLEDGE_FORGE_API_URL: apiBaseUrl,
+      KNOWLEDGE_FORGE_MCP_AUTOSTART: "false",
+      KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN: token,
     },
   });
   const client = new Client({ name, version: "0.1.0" });
@@ -162,10 +162,10 @@ const apiProcess = spawn(process.execPath, [tsxCli, "server/index.ts"], {
   cwd: rootDir,
   env: {
     ...process.env,
-    VECTOR_FORGE_ROOT_DIR: rootDir,
-    VECTOR_FORGE_DATA_DIR: tempDir,
-    VECTOR_FORGE_PORT: String(port),
-    VECTOR_FORGE_LOCAL_ACTION_TOKEN: token,
+    KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+    KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+    KNOWLEDGE_FORGE_PORT: String(port),
+    KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN: token,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -188,7 +188,7 @@ try {
   });
   assert(created.collection.slug === collectionSlug, "Collection was not created with expected slug.");
 
-  readOnlyClient = await connectMcpClient("vector-forge-mcp-write-smoke-readonly");
+  readOnlyClient = await connectMcpClient("knowledge-forge-mcp-write-smoke-readonly");
   await expectToolRejected(
     "vf_upsert_text with allowWrites=false",
     () => readOnlyClient!.callTool({
@@ -212,14 +212,14 @@ try {
   const enabledHealth = await fetchJson<HealthResponse>("/api/health");
   assert(enabledHealth.config.mcp.allowWrites === true, "Health did not report mcp.allowWrites=true.");
 
-  writeClient = await connectMcpClient("vector-forge-mcp-write-smoke");
+  writeClient = await connectMcpClient("knowledge-forge-mcp-write-smoke");
   const sentinel = `MCP_WRITE_SMOKE_SENTINEL_${Date.now()}`;
   const upsert = parseToolJson<UpsertResponse>("vf_upsert_text", await writeClient.callTool({
     name: "vf_upsert_text",
     arguments: {
       collection: collectionSlug,
       name: "mcp-write-smoke.txt",
-      text: `Vector Forge MCP write smoke document. ${sentinel} should be searchable until the document is deleted.`,
+      text: `Knowledge Forge MCP write smoke document. ${sentinel} should be searchable until the document is deleted.`,
       metadata: { smoke: true, sentinel },
     },
   }));

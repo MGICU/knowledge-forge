@@ -1,12 +1,12 @@
-# Vector Forge Desktop
+﻿# Knowledge Forge
 
 Version: `0.3.1`
 
-Vector Forge Desktop is a local-first knowledge base for people who want to turn messy files into searchable AI-ready memory without handing every document to a cloud service.
+Knowledge Forge is a local-first knowledge base for people who want to turn messy files into searchable AI-ready memory without handing every document to a cloud service.
 
 It combines document ingestion, OCR, chunking, embeddings, LanceDB vector search, MCP access, and optional AnythingLLM sync into one Windows desktop workflow. The core database stays local. AnythingLLM is treated as an optional downstream destination, not as the source of truth.
 
-中文介绍见 [README.zh-CN.md](README.zh-CN.md). Launch copy, GitHub topics, and social-post ideas are in [docs/github-launch.md](docs/github-launch.md).
+中文介绍见 [README.zh-CN.md](README.zh-CN.md).
 
 ## Why It Exists
 
@@ -17,7 +17,7 @@ Most personal knowledge-base tools force a hard choice:
 - RAG demos, but no real document management
 - chatbot UI, but no visibility into OCR, chunks, embeddings, or sync state
 
-Vector Forge Desktop is built for the missing middle: a practical local workbench where you can import files, see what happened, search the resulting chunks, expose the library to AI tools through MCP, and sync selected knowledge into AnythingLLM only when you choose.
+Knowledge Forge is built for the missing middle: a practical local workbench where you can import files, see what happened, search the resulting chunks, expose the library to AI tools through MCP, and sync selected knowledge into AnythingLLM only when you choose.
 
 ## Highlights
 
@@ -37,7 +37,7 @@ Vector Forge Desktop is built for the missing middle: a practical local workbenc
 
 ## Product Positioning
 
-Use Vector Forge Desktop when you want:
+Use Knowledge Forge when you want:
 
 - a private document memory layer for AI tools
 - a local RAG workbench that shows the ingestion pipeline instead of hiding it
@@ -79,7 +79,7 @@ Core ownership:
 - `src/`: React UI and desktop workbench
 - `server/`: API, document pipeline, LanceDB integration, MCP, and smoke tests
 - `electron/`: desktop shell, preload bridge, lifecycle management, and Electron smokes
-- `docs/`: delivery logs, project progress, audit notes, and MCP setup guide
+- `docs/`: MCP setup guides, public positioning notes, delivery logs, and audit notes
 
 ## Quick Start
 
@@ -135,10 +135,10 @@ release/
 
 Expected artifact names:
 
-- `release/win-unpacked/Vector Forge Desktop.exe`
-- `release/Vector Forge Desktop-Setup-<version>-x64.exe`
-- `release/Vector Forge Desktop-Portable-<version>-x64.exe`
-- `release/Vector Forge Desktop-<version>-x64.zip`
+- `release/win-unpacked/Knowledge Forge.exe`
+- `release/Knowledge Forge-Setup-<version>-x64.exe`
+- `release/Knowledge Forge-Portable-<version>-x64.exe`
+- `release/Knowledge Forge-<version>-x64.zip`
 
 ## Verification
 
@@ -212,10 +212,10 @@ High-impact next slices:
 
 ## Status
 
-`0.3.1` is an active desktop-oriented iteration. The app already has a broad local smoke suite and packaged Windows workflow, but this repository should still be treated as an engineering workbench rather than a polished commercial release.
+`0.3.1` is an active preview. Core local ingestion, OCR, vector search, MCP read access, AnythingLLM sync, and Windows desktop packaging workflows are implemented; APIs and UX may continue to change before a stable release.
 
 The current design priority is practical reliability: every visible button should either perform a real action, open a confirmation, show a clear disabled reason, or be covered by smoke tests.
 
 ## License
 
-No license has been selected yet. Add a license before publishing this as open source for external reuse.
+No open-source license has been selected yet. Until a `LICENSE` file is added, this repository is source-available only; no reuse license is granted.

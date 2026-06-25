@@ -1,6 +1,6 @@
-# GitHub Launch Notes
+﻿# GitHub Launch Notes
 
-This file is the launch copy kit for publishing Vector Forge Desktop on GitHub.
+This file documents public positioning, repository metadata, demo flow, and release messaging for Knowledge Forge.
 
 ## Repository Description
 
@@ -23,25 +23,25 @@ Local-first AI knowledge-base desktop app with OCR, LanceDB vector search, MCP a
 
 ## Short Pitch
 
-Vector Forge Desktop turns messy local files into a private AI-ready knowledge base. Import documents, OCR scanned files, chunk and embed text, search locally with LanceDB, expose read-only MCP tools to AI clients, and optionally sync selected knowledge into AnythingLLM.
+Knowledge Forge turns messy local files into a private AI-ready knowledge base. Import documents, OCR scanned files, chunk and embed text, search locally with LanceDB, expose read-only MCP tools to AI clients, and optionally sync selected knowledge into AnythingLLM.
 
 ## Longer Pitch
 
-Most AI knowledge-base demos skip the hard part: reliable local ingestion. Vector Forge Desktop focuses on the operational layer behind useful RAG workflows. It gives you a desktop workbench for importing files, scanning folders, OCRing documents, managing per-collection embedding and parser settings, inspecting chunks, searching local vectors, and safely exposing the result to AI tools through MCP.
+Most AI knowledge-base demos skip the hard part: reliable local ingestion. Knowledge Forge focuses on the operational layer behind useful RAG workflows. It gives you a desktop workbench for importing files, scanning folders, OCRing documents, managing per-collection embedding and parser settings, inspecting chunks, searching local vectors, and safely exposing the result to AI tools through MCP.
 
 The project is local-first by design. The core data stays in the local managed data directory and LanceDB tables. AnythingLLM integration is optional and downstream, with idempotent sync records and cleanup queues instead of blind repeated uploads.
 
 ## Chinese Pitch
 
-Vector Forge Desktop 是一个本地优先的 AI 知识库桌面应用。它把 PDF、Word、图片、Markdown、CSV、JSON、日志和普通文本变成本地可检索、可审计、可接入 MCP 的向量知识库，并且可以选择性同步到 AnythingLLM。
+Knowledge Forge 是一个本地优先的 AI 知识库桌面应用。它把 PDF、Word、图片、Markdown、CSV、JSON、日志和普通文本变成本地可检索、可审计、可接入 MCP 的向量知识库，并且可以选择性同步到 AnythingLLM。
 
-它不是又一个聊天壳，而是 AI 知识库真正需要的底层工作台：导入、OCR、切片、embedding、LanceDB 检索、文档管理、任务状态、MCP 只读访问、AnythingLLM 幂等同步和清理队列。
+它不是通用聊天界面，而是 AI 知识库需要的本地工作台：导入、OCR、切片、embedding、LanceDB 检索、文档管理、任务状态、MCP 只读访问、AnythingLLM 幂等同步和清理队列。
 
 ## Social Post Draft
 
-I am building Vector Forge Desktop: a local-first AI knowledge-base app for Windows.
+Knowledge Forge is a local-first AI knowledge-base app for Windows.
 
-It handles the boring but critical part of RAG:
+It handles the operationally important part of RAG:
 
 - import files and folders
 - OCR scanned docs
@@ -55,9 +55,9 @@ The core idea: your local vector library is the source of truth. Cloud or Anythi
 
 ## 中文社交文案
 
-我做了一个本地优先的 AI 知识库桌面应用：Vector Forge Desktop。
+我做了一个本地优先的 AI 知识库桌面应用：Knowledge Forge。
 
-它不是聊天壳，而是把真正麻烦的 RAG 入库流程做成桌面工作台：
+它不是通用聊天界面，而是把 RAG 入库、检索和审计流程做成桌面工作台：
 
 - 文件和目录导入
 - PDF/图片 OCR
@@ -74,7 +74,7 @@ The core idea: your local vector library is the source of truth. Cloud or Anythi
 
 Lead with the pain point:
 
-> Local AI knowledge bases fail when ingestion is invisible. Vector Forge Desktop makes ingestion, OCR, chunking, embeddings, retrieval, and sync observable.
+> Local AI knowledge bases fail when ingestion is invisible. Knowledge Forge makes ingestion, OCR, chunking, embeddings, retrieval, and sync observable.
 
 Then show the workflow:
 
@@ -107,4 +107,4 @@ For a strong public demo:
 
 ## Honest Status
 
-This is an engineering workbench with strong smoke coverage, not a polished commercial release. That honesty is useful: the project is valuable because it exposes the local RAG pipeline instead of hiding it behind a chat box.
+Knowledge Forge is in active preview. Core local ingestion, search, MCP, and Windows packaging workflows are implemented, while APIs and UX may continue to change before a stable release.

@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+﻿import { readFile } from "node:fs/promises";
 import type { Server as HttpServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -178,11 +178,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const inferredRootDir =
   path.basename(path.resolve(__dirname, "..")) === "dist-server" ? path.resolve(__dirname, "..", "..") : path.resolve(__dirname, "..");
-const rootDir = process.env.VECTOR_FORGE_ROOT_DIR ? path.resolve(process.env.VECTOR_FORGE_ROOT_DIR) : inferredRootDir;
-let apiBaseUrl = normalizeBaseUrl(process.env.VECTOR_FORGE_API_URL || "http://127.0.0.1:5183");
+const rootDir = process.env.KNOWLEDGE_FORGE_ROOT_DIR ? path.resolve(process.env.KNOWLEDGE_FORGE_ROOT_DIR) : inferredRootDir;
+let apiBaseUrl = normalizeBaseUrl(process.env.KNOWLEDGE_FORGE_API_URL || "http://127.0.0.1:5183");
 let ownedApiServer: HttpServer | null = null;
 let ensureApiPromise: Promise<string> | null = null;
-const localActionToken = process.env.VECTOR_FORGE_LOCAL_ACTION_TOKEN?.trim() || "";
+const localActionToken = process.env.KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN?.trim() || "";
 
 function normalizeBaseUrl(input: string) {
   return input.replace(/\/+$/, "");
@@ -216,16 +216,16 @@ async function ensureApiBaseUrl() {
   if (ensureApiPromise) return ensureApiPromise;
   ensureApiPromise = (async () => {
     if (await apiAvailable(apiBaseUrl)) return apiBaseUrl;
-    if (process.env.VECTOR_FORGE_MCP_AUTOSTART === "false") {
-      throw new Error(`Vector Forge Lab API is not reachable at ${apiBaseUrl}.`);
+    if (process.env.KNOWLEDGE_FORGE_MCP_AUTOSTART === "false") {
+      throw new Error(`Knowledge Forge API is not reachable at ${apiBaseUrl}.`);
     }
-    const requestedPort = Number(process.env.VECTOR_FORGE_MCP_PORT ?? 0);
+    const requestedPort = Number(process.env.KNOWLEDGE_FORGE_MCP_PORT ?? 0);
     ownedApiServer = await startServer(Number.isFinite(requestedPort) ? requestedPort : 0, { silent: true });
     const address = ownedApiServer.address();
     if (!address || typeof address === "string") throw new Error("Unable to determine auto-started API port.");
     apiBaseUrl = `http://127.0.0.1:${address.port}`;
     if (!(await apiAvailable(apiBaseUrl))) throw new Error(`Auto-started API did not become healthy at ${apiBaseUrl}.`);
-    console.error(`[vector-forge-mcp] Auto-started API at ${apiBaseUrl}`);
+    console.error(`[knowledge-forge-mcp] Auto-started API at ${apiBaseUrl}`);
     return apiBaseUrl;
   })();
   try {
@@ -240,7 +240,7 @@ async function api<T>(route: string, init: RequestInit = {}) {
   const baseUrl = await ensureApiBaseUrl();
   const response = await fetchWithTimeout(`${baseUrl}${route}`, withLocalActionToken(init), 120_000);
   const text = await response.text();
-  if (!response.ok) throw new Error(`Vector Forge API ${response.status} ${route}: ${text || response.statusText}`);
+  if (!response.ok) throw new Error(`Knowledge Forge API ${response.status} ${route}: ${text || response.statusText}`);
   if (!text.trim()) return {} as T;
   return JSON.parse(text) as T;
 }
@@ -249,7 +249,7 @@ function withLocalActionToken(init: RequestInit) {
   const method = (init.method ?? "GET").toUpperCase();
   if (!localActionToken || ["GET", "HEAD", "OPTIONS"].includes(method)) return init;
   const headers = new Headers(init.headers);
-  headers.set("X-Vector-Forge-Local-Action-Token", localActionToken);
+  headers.set("X-knowledge-forge-Local-Action-Token", localActionToken);
   return { ...init, headers };
 }
 
@@ -681,9 +681,9 @@ async function documentQualityOverview() {
 function registerResources(server: McpServer) {
   server.registerResource(
     "vf_health",
-    "vectorforge://health",
+    "KnowledgeForge://health",
     {
-      title: "Vector Forge Health",
+      title: "Knowledge Forge Health",
       description: "API health, app version, configured embedding provider, and LanceDB tables.",
       mimeType: "application/json",
     },
@@ -692,9 +692,9 @@ function registerResources(server: McpServer) {
 
   server.registerResource(
     "vf_collections",
-    "vectorforge://collections",
+    "KnowledgeForge://collections",
     {
-      title: "Vector Forge Collections",
+      title: "Knowledge Forge Collections",
       description: "All local vector collections.",
       mimeType: "application/json",
     },
@@ -703,9 +703,9 @@ function registerResources(server: McpServer) {
 
   server.registerResource(
     "vf_collection_documents",
-    new ResourceTemplate("vectorforge://collections/{slug}/documents", { list: undefined }),
+    new ResourceTemplate("KnowledgeForge://collections/{slug}/documents", { list: undefined }),
     {
-      title: "Vector Forge Collection Documents",
+      title: "Knowledge Forge Collection Documents",
       description: "Documents indexed into one collection.",
       mimeType: "application/json",
     },
@@ -717,9 +717,9 @@ function registerResources(server: McpServer) {
 
   server.registerResource(
     "vf_embedding_provider_status",
-    "vectorforge://embedding-provider/status",
+    "KnowledgeForge://embedding-provider/status",
     {
-      title: "Vector Forge Embedding Provider Status",
+      title: "Knowledge Forge Embedding Provider Status",
       description: "Current embedding provider configuration and per-collection embedding/index compatibility status.",
       mimeType: "application/json",
     },
@@ -728,9 +728,9 @@ function registerResources(server: McpServer) {
 
   server.registerResource(
     "vf_recent_jobs",
-    "vectorforge://jobs/recent",
+    "KnowledgeForge://jobs/recent",
     {
-      title: "Vector Forge Recent Jobs",
+      title: "Knowledge Forge Recent Jobs",
       description: "Recent local upload and reprocess jobs with status, phase, and progress.",
       mimeType: "application/json",
     },
@@ -739,9 +739,9 @@ function registerResources(server: McpServer) {
 
   server.registerResource(
     "vf_anythingllm_sync_status",
-    "vectorforge://anythingllm/sync-status",
+    "KnowledgeForge://anythingllm/sync-status",
     {
-      title: "Vector Forge AnythingLLM Sync Status",
+      title: "Knowledge Forge AnythingLLM Sync Status",
       description: "Local AnythingLLM sync configuration and recorded per-collection sync metadata without contacting AnythingLLM.",
       mimeType: "application/json",
     },
@@ -750,9 +750,9 @@ function registerResources(server: McpServer) {
 
   server.registerResource(
     "vf_document_quality_overview",
-    "vectorforge://documents/quality",
+    "KnowledgeForge://documents/quality",
     {
-      title: "Vector Forge OCR and Document Quality",
+      title: "Knowledge Forge OCR and Document Quality",
       description: "OCR configuration, parser coverage, warnings, failures, low-confidence OCR, and document quality overview.",
       mimeType: "application/json",
     },
@@ -764,7 +764,7 @@ function registerTools(server: McpServer) {
   server.registerTool(
     "vf_stats",
     {
-      title: "Vector Forge stats",
+      title: "Knowledge Forge stats",
       description: "Return health, collection list, storage tables, and embedding provider status.",
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
@@ -775,7 +775,7 @@ function registerTools(server: McpServer) {
     "vf_list_collections",
     {
       title: "List vector collections",
-      description: "List collections available in Vector Forge Lab.",
+      description: "List collections available in Knowledge Forge.",
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     async () => toolResult(await api<JsonValue>("/api/collections")),
@@ -801,7 +801,7 @@ function registerTools(server: McpServer) {
     "vf_upsert_text",
     {
       title: "Upsert text into a collection",
-      description: "Create chunks, embed them, and add the text to a collection. Disabled unless Vector Forge mcp.allowWrites is true.",
+      description: "Create chunks, embed them, and add the text to a collection. Disabled unless Knowledge Forge mcp.allowWrites is true.",
       inputSchema: {
         collection: z.string().min(1),
         name: z.string().min(1),
@@ -812,7 +812,7 @@ function registerTools(server: McpServer) {
     },
     async ({ collection, ...body }) => {
       const health = await api<{ config: { mcp: { allowWrites: boolean } } }>("/api/health");
-      if (!health.config.mcp.allowWrites) throw new Error("MCP write tools are disabled. Enable mcp.allowWrites in Vector Forge config first.");
+      if (!health.config.mcp.allowWrites) throw new Error("MCP write tools are disabled. Enable mcp.allowWrites in Knowledge Forge config first.");
       return toolResult(await api<JsonValue>(`/api/collections/${encodeURIComponent(collection)}/text`, jsonInit("POST", body)));
     },
   );
@@ -845,7 +845,7 @@ function registerTools(server: McpServer) {
     },
     async ({ collection, documentId }) => {
       const health = await api<{ config: { mcp: { allowWrites: boolean } } }>("/api/health");
-      if (!health.config.mcp.allowWrites) throw new Error("MCP delete tools are disabled. Enable mcp.allowWrites in Vector Forge config first.");
+      if (!health.config.mcp.allowWrites) throw new Error("MCP delete tools are disabled. Enable mcp.allowWrites in Knowledge Forge config first.");
       return toolResult(await api<JsonValue>(`/api/collections/${encodeURIComponent(collection)}/documents/${encodeURIComponent(documentId)}`, jsonInit("DELETE", {})));
     },
   );
@@ -853,14 +853,14 @@ function registerTools(server: McpServer) {
 
 async function main() {
   const server = new McpServer({
-    name: "vector-forge-lab",
+    name: "knowledge-forge",
     version: await readAppVersion(),
   });
   registerResources(server);
   registerTools(server);
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error(`[vector-forge-mcp] MCP stdio ready. API target: ${apiBaseUrl}`);
+  console.error(`[knowledge-forge-mcp] MCP stdio ready. API target: ${apiBaseUrl}`);
 }
 
 process.stdin.on("close", () => {
@@ -868,7 +868,7 @@ process.stdin.on("close", () => {
 });
 
 main().catch((error) => {
-  console.error("[vector-forge-mcp] Fatal error", error);
+  console.error("[knowledge-forge-mcp] Fatal error", error);
   ownedApiServer?.close();
   process.exit(1);
 });

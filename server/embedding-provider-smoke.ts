@@ -1,11 +1,11 @@
-import { spawn } from "node:child_process";
+﻿import { spawn } from "node:child_process";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-embedding-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-embedding-smoke-"));
 const apiPort = 62021;
 const providerPort = 62022;
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
@@ -146,10 +146,10 @@ const apiServer = spawn(process.execPath, [tsxCli, "server/index.ts"], {
   cwd: rootDir,
   env: {
     ...process.env,
-    VECTOR_FORGE_ROOT_DIR: rootDir,
-    VECTOR_FORGE_DATA_DIR: tempDir,
-    VECTOR_FORGE_PORT: String(apiPort),
-    VECTOR_FORGE_EMBEDDING_TIMEOUT_MS: "250",
+    KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+    KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+    KNOWLEDGE_FORGE_PORT: String(apiPort),
+    KNOWLEDGE_FORGE_EMBEDDING_TIMEOUT_MS: "250",
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

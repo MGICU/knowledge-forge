@@ -1,11 +1,11 @@
-import { spawn } from "node:child_process";
+﻿import { spawn } from "node:child_process";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-anythingllm-desktop-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-anythingllm-desktop-smoke-"));
 const port = 61990;
 const anythingPort = 61991;
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
@@ -88,9 +88,9 @@ const server = spawn(process.execPath, [tsxCli, "server/index.ts"], {
   cwd: rootDir,
   env: {
     ...process.env,
-    VECTOR_FORGE_ROOT_DIR: rootDir,
-    VECTOR_FORGE_DATA_DIR: tempDir,
-    VECTOR_FORGE_PORT: String(port),
+    KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+    KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+    KNOWLEDGE_FORGE_PORT: String(port),
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

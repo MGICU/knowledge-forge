@@ -1,4 +1,4 @@
-import cors from "cors";
+﻿import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
 import * as lancedb from "@lancedb/lancedb";
 import multer from "multer";
@@ -27,8 +27,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const inferredRootDir =
   path.basename(path.resolve(__dirname, "..")) === "dist-server" ? path.resolve(__dirname, "..", "..") : path.resolve(__dirname, "..");
-const rootDir = process.env.VECTOR_FORGE_ROOT_DIR ? path.resolve(process.env.VECTOR_FORGE_ROOT_DIR) : inferredRootDir;
-const dataDir = process.env.VECTOR_FORGE_DATA_DIR ? path.resolve(process.env.VECTOR_FORGE_DATA_DIR) : path.join(rootDir, "data");
+const rootDir = process.env.KNOWLEDGE_FORGE_ROOT_DIR ? path.resolve(process.env.KNOWLEDGE_FORGE_ROOT_DIR) : inferredRootDir;
+const dataDir = process.env.KNOWLEDGE_FORGE_DATA_DIR ? path.resolve(process.env.KNOWLEDGE_FORGE_DATA_DIR) : path.join(rootDir, "data");
 const uploadsDir = path.join(dataDir, "uploads");
 const extractedDir = path.join(dataDir, "extracted");
 const lanceDir = path.join(dataDir, "lancedb");
@@ -38,13 +38,13 @@ const configPath = path.join(dataDir, "config.json");
 const onboardingPath = path.join(dataDir, "onboarding.json");
 const aiToolAuditPath = path.join(dataDir, "ai-tool-audit.jsonl");
 const anythingCleanupQueuePath = path.join(dataDir, "anythingllm-cleanup-queue.json");
-const staticDir = process.env.VECTOR_FORGE_STATIC_DIR ? path.resolve(process.env.VECTOR_FORGE_STATIC_DIR) : path.join(rootDir, "dist");
+const staticDir = process.env.KNOWLEDGE_FORGE_STATIC_DIR ? path.resolve(process.env.KNOWLEDGE_FORGE_STATIC_DIR) : path.join(rootDir, "dist");
 const appVersion = readPackageVersion();
-const defaultPort = Number(process.env.VECTOR_FORGE_PORT ?? 5183);
+const defaultPort = Number(process.env.KNOWLEDGE_FORGE_PORT ?? 5183);
 const requestTimeoutMs = 60_000;
 const directoryScanSessionTtlMs = 15 * 60_000;
 const directoryScanSessions = new Map<string, DirectoryScanSession>();
-const anythingCleanupBatchSize = Math.max(1, Math.min(500, Number(process.env.VECTOR_FORGE_ANYTHING_CLEANUP_BATCH_SIZE ?? 100) || 100));
+const anythingCleanupBatchSize = Math.max(1, Math.min(500, Number(process.env.KNOWLEDGE_FORGE_ANYTHING_CLEANUP_BATCH_SIZE ?? 100) || 100));
 const aiAuditPreviewChars = 420;
 const aiToolRiskRank: Record<AiToolRisk, number> = {
   read: 1,
@@ -438,8 +438,41 @@ type DocumentRecord = {
   jobId?: string;
   originalName?: string;
   originalSizeBytes?: number;
+
   extractedTextBytes?: number;
+  archived?: boolean;
+  archivedAt?: string;
   duplicateOf?: string;
+  notes?: string;
+  tags?: string[];
+};
+
+type OcrQualityReport = {
+  collectionSlug: string;
+  totalDocuments: number;
+  ocrDocuments: number;
+  nativeTextDocuments: number;
+  totalPages: number;
+  nativeTextPages: number;
+  ocrPages: number;
+  failedPages: number;
+  lowConfidencePages: number;
+  averageConfidence: number | null;
+  perDocument: Array<{
+    documentId: string;
+    documentName: string;
+    pageCount: number;
+    nativeTextPages: number;
+    ocrPages: number;
+    failedPages: number;
+    lowConfidencePages: number;
+    averageConfidence: number | null;
+    ocrEngine: string;
+    warnings: string[];
+    needsReview: boolean;
+  }>;
+  needsReviewCount: number;
+  generatedAt: string;
 };
 
 type VectorRow = {
@@ -499,8 +532,8 @@ const defaultConfig: AppConfig = {
     enabled: false,
     baseUrl: "http://127.0.0.1:3001/api",
     apiKey: "",
-    workspaceName: "Vector Forge Lab",
-    workspaceSlug: "vector-forge-lab",
+    workspaceName: "Knowledge Forge",
+    workspaceSlug: "knowledge-forge",
     desktopExePath: "",
   },
   mcp: {
@@ -510,7 +543,7 @@ const defaultConfig: AppConfig = {
 
 const app = express();
 const loopbackHosts = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
-const localActionToken = process.env.VECTOR_FORGE_LOCAL_ACTION_TOKEN?.trim() || "";
+const localActionToken = process.env.KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN?.trim() || "";
 const allowedInstallerExtensions = new Set([".exe", ".msi", ".dmg", ".zip", ".appimage"]);
 const launchableInstallerExtensions = new Set([".exe", ".msi", ".dmg", ".appimage"]);
 const allowedInstallerHosts = new Set(["github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com", "github-releases.githubusercontent.com"]);
@@ -610,7 +643,7 @@ function assertLoopbackRequest(request: Request) {
 function assertTrustedLocalActionRequest(request: Request) {
   assertLoopbackRequest(request);
   if (!localActionToken) return;
-  const provided = request.get("X-Vector-Forge-Local-Action-Token")?.trim() || "";
+  const provided = request.get("X-knowledge-forge-Local-Action-Token")?.trim() || "";
   if (provided !== localActionToken) {
     throw Object.assign(new Error("Trusted local action token is required for this desktop endpoint."), { statusCode: 403 });
   }
@@ -1618,6 +1651,8 @@ function normalizeDocumentRecord(slug: string, input: Partial<DocumentRecord>): 
     warnings: Array.isArray(input.warnings) ? input.warnings : [],
     processingStartedAt: input.processingStartedAt,
     processingFinishedAt: input.processingFinishedAt,
+    notes: typeof input.notes === "string" ? input.notes.slice(0, 2000) : undefined,
+    tags: Array.isArray(input.tags) ? input.tags.slice(0, 20).map((t: unknown) => String(t).slice(0, 50)).filter(Boolean) : undefined,
     jobId: input.jobId,
     originalName: input.originalName,
     originalSizeBytes: input.originalSizeBytes,
@@ -1790,7 +1825,7 @@ function localHashEmbedding(text: string, dimension: number) {
 }
 
 function embeddingRequestTimeoutMs() {
-  const configured = Number(process.env.VECTOR_FORGE_EMBEDDING_TIMEOUT_MS ?? 30_000);
+  const configured = Number(process.env.KNOWLEDGE_FORGE_EMBEDDING_TIMEOUT_MS ?? 30_000);
   if (!Number.isFinite(configured) || configured <= 0) return 30_000;
   return Math.min(120_000, Math.max(100, Math.trunc(configured)));
 }
@@ -2938,8 +2973,8 @@ class AnythingLLMClient {
         textContent: input.text,
         metadata: {
           title: input.title,
-          docAuthor: "Vector Forge Lab",
-          docSource: "vector-forge-lab",
+          docAuthor: "Knowledge Forge",
+          docSource: "knowledge-forge",
           ...input.metadata,
         },
       }),
@@ -2986,12 +3021,12 @@ function anythingMetadata(collection: CollectionRecord, row: VectorRow, syncKey:
     sourceName: row.sourceName,
     sourcePath: row.sourcePath,
     mime: row.mime,
-    vectorForgeCollectionSlug: collection.slug,
-    vectorForgeDocumentId: row.documentId,
-    vectorForgeChunkId: row.id,
-    vectorForgeChunkIndex: row.chunkIndex,
-    vectorForgeSyncKey: syncKey,
-    vectorForgeTextHash: textHash,
+    KnowledgeForgeCollectionSlug: collection.slug,
+    KnowledgeForgeDocumentId: row.documentId,
+    KnowledgeForgeChunkId: row.id,
+    KnowledgeForgeChunkIndex: row.chunkIndex,
+    KnowledgeForgeSyncKey: syncKey,
+    KnowledgeForgeTextHash: textHash,
   };
 }
 
@@ -3820,7 +3855,7 @@ app.post("/api/config/copy-from-collection/:slug", asyncRoute(async (request, re
 
 app.post("/api/test-embedding", asyncRoute(async (request, response) => {
   const config = mergeConfig(await loadConfig(), request.body ?? {});
-  const [vector] = await embedTexts(config, ["Vector Forge Lab embedding test"]);
+  const [vector] = await embedTexts(config, ["Knowledge Forge embedding test"]);
   response.json({ ok: true, provider: config.embedding.provider, model: config.embedding.model, dimension: vector.length, preview: vector.slice(0, 8) });
 }));
 
@@ -3961,7 +3996,7 @@ app.post("/api/anythingllm/download-installer", asyncRoute(async (request, respo
   const timeout = setTimeout(() => controller.abort(), 180_000);
   try {
     const download = await fetch(installerUrl, {
-      headers: { "User-Agent": `VectorForgeLab/${appVersion}` },
+      headers: { "User-Agent": `KnowledgeForgeLab/${appVersion}` },
       signal: controller.signal,
     });
     const finalUrl = assertValidInstallerUrl(download.url || installerUrl.href);
@@ -4221,6 +4256,30 @@ app.post("/api/collections/:slug/documents/batch-delete", asyncRoute(async (requ
   response.json(batchResponse(results));
 }));
 
+app.patch("/api/documents/:id/metadata", asyncRoute(async (request, response) => {
+  const docId = String(request.params.id);
+  const body = z.object({
+    notes: z.string().max(2000).optional(),
+    tags: z.array(z.string().max(50)).max(20).optional(),
+  }).parse(request.body ?? {});
+
+  const manifest = await loadManifest();
+  const collection = manifest.collections.find((c) => c.slug === (request.query.collectionSlug as string));
+  if (!collection) { response.status(400).json({ error: "?? collectionSlug ????????????" }); return; }
+
+  const docs = await loadDocuments(collection.slug);
+  const idx = docs.findIndex((d) => d.id === docId);
+  if (idx < 0) { response.status(404).json({ error: "??????" }); return; }
+
+  if (body.notes !== undefined) docs[idx].notes = body.notes;
+  if (body.tags !== undefined) docs[idx].tags = body.tags;
+  docs[idx].updatedAt = new Date().toISOString();
+
+  await saveDocuments(collection.slug, docs);
+  response.json(docs[idx]);
+  return;
+}));
+
 app.post("/api/collections/:slug/documents/batch-reprocess", asyncRoute(async (request, response) => {
   const documentIds = parseBatchDocumentIds(request.body ?? {});
   const { collection } = await getCollection(String(request.params.slug));
@@ -4346,9 +4405,186 @@ app.post("/api/collections/:slug/upload-jobs", upload.array("files"), asyncRoute
   response.json({ jobs: createdJobs, collections: await listCollections(), documents: await loadDocuments(slug) });
 }));
 
+app.get("/api/collections/:slug/quality-report", asyncRoute(async (request, response) => {
+  const slug = String(request.params.slug);
+  const docs = await loadDocuments(slug);
+  const perDocument: OcrQualityReport["perDocument"] = [];
+  let totalPages = 0;
+  let nativeTextPages = 0;
+  let ocrPages = 0;
+  let failedPages = 0;
+  let lowConfidencePages = 0;
+  let ocrDocuments = 0;
+  let nativeTextDocuments = 0;
+  let totalConfidence = 0;
+  let confidenceCount = 0;
+  let needsReviewCount = 0;
+
+  for (const doc of docs) {
+    const pages = doc.pageCount || 0;
+    const isOcr = Boolean(doc.ocrEngine);
+    const isFailed = doc.status === "failed";
+    const docWarnings = doc.warnings || [];
+    const conf = typeof doc.ocrConfidence === "number" ? doc.ocrConfidence : null;
+    const lowPages = (conf !== null && conf < 60) ? pages : 0;
+    const failedDocPages = isFailed ? pages : 0;
+    const needsReview = lowPages > 0 || failedDocPages > 0 || docWarnings.length > 0;
+
+    totalPages += pages;
+    if (isOcr) { ocrPages += pages; ocrDocuments++; }
+    else { nativeTextPages += pages; nativeTextDocuments++; }
+    failedPages += failedDocPages;
+    lowConfidencePages += lowPages;
+    if (conf !== null) { totalConfidence += conf * pages; confidenceCount += pages; }
+    if (needsReview) needsReviewCount++;
+
+    perDocument.push({
+      documentId: doc.id,
+      documentName: doc.originalName || doc.name,
+      pageCount: pages,
+      nativeTextPages: isOcr ? 0 : pages,
+      ocrPages: isOcr ? pages : 0,
+      failedPages: failedDocPages,
+      lowConfidencePages: lowPages,
+      averageConfidence: conf,
+      ocrEngine: doc.ocrEngine || (isFailed ? "failed" : "native"),
+      warnings: docWarnings,
+      needsReview,
+    });
+  }
+
+  response.json({
+    collectionSlug: slug,
+    totalDocuments: docs.length,
+    ocrDocuments,
+    nativeTextDocuments,
+    totalPages,
+    nativeTextPages,
+    ocrPages,
+    failedPages,
+    lowConfidencePages,
+    averageConfidence: confidenceCount > 0 ? totalConfidence / confidenceCount : null,
+    perDocument,
+    needsReviewCount,
+    generatedAt: new Date().toISOString(),
+  } satisfies OcrQualityReport);
+  return;
+}));
+
 app.post("/api/collections/:slug/search", asyncRoute(async (request, response) => {
-  const body = z.object({ query: z.string().min(1), topK: z.number().int().min(1).max(50).default(8) }).parse(request.body ?? {});
-  response.json({ results: await searchCollection(String(request.params.slug), body.query, body.topK) });
+  const body = z.object({
+    query: z.string().min(1),
+    topK: z.number().int().min(1).max(50).default(8),
+    fileType: z.string().optional(),
+    dateFrom: z.string().optional(),
+    dateTo: z.string().optional(),
+    minConfidence: z.number().min(0).max(100).optional(),
+    ocrStatus: z.string().optional(),
+  }).parse(request.body ?? {});
+
+  let results = await searchCollection(String(request.params.slug), body.query, body.topK);
+
+  // Post-search metadata filters
+  if (body.fileType || body.dateFrom || body.dateTo || (body.minConfidence && body.minConfidence > 0) || (body.ocrStatus && body.ocrStatus !== "all")) {
+    const docs = await loadDocuments(String(request.params.slug));
+    const docMap = new Map(docs.map((d) => [d.id, d]));
+
+    if (body.fileType) {
+      const mapping: Record<string, string[]> = {
+        pdf: ["pdf-text", "pdf-ocr"],
+        docx: ["docx"],
+        txt: ["text", "html"],
+        html: ["html"],
+        json: ["json"],
+        csv: ["csv"],
+        image: ["image-ocr"],
+      };
+      results = results.filter((r) => {
+        const doc = docMap.get(r.documentId);
+        if (!doc) return false;
+        const pt = doc.parserType || "unknown";
+        return (mapping[body.fileType!] || []).includes(pt);
+      });
+    }
+
+    if (body.dateFrom) {
+      const from = new Date(body.dateFrom).getTime();
+      results = results.filter((r) => {
+        const doc = docMap.get(r.documentId);
+        return doc ? new Date(doc.createdAt).getTime() >= from : false;
+      });
+    }
+
+    if (body.dateTo) {
+      const to = new Date(body.dateTo).getTime() + 86400000;
+      results = results.filter((r) => {
+        const doc = docMap.get(r.documentId);
+        return doc ? new Date(doc.createdAt).getTime() <= to : false;
+      });
+    }
+
+    if (body.minConfidence && body.minConfidence > 0) {
+      results = results.filter((r) => {
+        const doc = docMap.get(r.documentId);
+        if (!doc || typeof doc.ocrConfidence !== "number") return true;
+        return doc.ocrConfidence >= body.minConfidence!;
+      });
+    }
+
+    if (body.ocrStatus && body.ocrStatus !== "all") {
+      results = results.filter((r) => {
+        const doc = docMap.get(r.documentId);
+        if (!doc) return false;
+        if (body.ocrStatus === "ocr") return Boolean(doc.ocrEngine);
+        if (body.ocrStatus === "native") return !doc.ocrEngine;
+        if (body.ocrStatus === "failed") return doc.status === "failed";
+        return true;
+      });
+    }
+  }
+
+  response.json({ results, totalUnfiltered: results.length });
+}));
+
+app.post("/api/documents/:id/archive", asyncRoute(async (request, response) => {
+  const docId = String(request.params.id);
+  const slug = String(request.query.collectionSlug || "");
+  if (!slug) { response.status(400).json({ error: "?? collectionSlug" }); return; }
+  const docs = await loadDocuments(slug);
+  const idx = docs.findIndex((d) => d.id === docId);
+  if (idx < 0) { response.status(404).json({ error: "?????" }); return; }
+  docs[idx].archived = true;
+  docs[idx].archivedAt = new Date().toISOString();
+  docs[idx].updatedAt = new Date().toISOString();
+  await saveDocuments(slug, docs);
+  response.json(docs[idx]);
+  return;
+}));
+
+app.post("/api/documents/:id/restore", asyncRoute(async (request, response) => {
+  const docId = String(request.params.id);
+  const slug = String(request.query.collectionSlug || "");
+  if (!slug) { response.status(400).json({ error: "?? collectionSlug" }); return; }
+  const docs = await loadDocuments(slug);
+  const idx = docs.findIndex((d) => d.id === docId);
+  if (idx < 0) { response.status(404).json({ error: "?????" }); return; }
+  docs[idx].archived = false;
+  docs[idx].archivedAt = undefined;
+  docs[idx].updatedAt = new Date().toISOString();
+  await saveDocuments(slug, docs);
+  response.json(docs[idx]);
+  return;
+}));
+
+app.get("/api/collections/:slug/tags", asyncRoute(async (request, response) => {
+  const slug = String(request.params.slug);
+  const docs = await loadDocuments(slug);
+  const tagSet = new Set<string>();
+  for (const doc of docs) {
+    if (doc.tags) for (const t of doc.tags) tagSet.add(t);
+  }
+  response.json({ tags: Array.from(tagSet).sort() });
+  return;
 }));
 
 app.post("/api/collections/:slug/sync-anythingllm", asyncRoute(async (request, response) => {
@@ -4364,7 +4600,7 @@ export async function startServer(port = defaultPort, options: { silent?: boolea
     const server = app.listen(port, "127.0.0.1", () => {
       const address = server.address();
       const actualPort = typeof address === "object" && address ? address.port : port;
-      if (!options.silent) console.log(`Vector Forge Lab listening on http://127.0.0.1:${actualPort}`);
+      if (!options.silent) console.log(`Knowledge Forge listening on http://127.0.0.1:${actualPort}`);
       resolve(server);
     });
   });

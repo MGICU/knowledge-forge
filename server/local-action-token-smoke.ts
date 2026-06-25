@@ -1,10 +1,10 @@
-import { spawn } from "node:child_process";
+﻿import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-token-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-token-smoke-"));
 const port = 61991;
 const token = "local-action-token-smoke-secret";
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
@@ -18,7 +18,7 @@ function jsonHeaders(extra: Record<string, string> = {}) {
 }
 
 function tokenHeader(value = token) {
-  return { "X-Vector-Forge-Local-Action-Token": value };
+  return { "X-knowledge-forge-Local-Action-Token": value };
 }
 
 async function fetchRaw(route: string, init?: RequestInit & { headers?: Record<string, string> }) {
@@ -62,10 +62,10 @@ const server = spawn(process.execPath, [tsxCli, "server/index.ts"], {
   cwd: rootDir,
   env: {
     ...process.env,
-    VECTOR_FORGE_ROOT_DIR: rootDir,
-    VECTOR_FORGE_DATA_DIR: tempDir,
-    VECTOR_FORGE_PORT: String(port),
-    VECTOR_FORGE_LOCAL_ACTION_TOKEN: token,
+    KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+    KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+    KNOWLEDGE_FORGE_PORT: String(port),
+    KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN: token,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

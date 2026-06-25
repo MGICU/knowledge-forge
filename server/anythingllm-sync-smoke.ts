@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+﻿import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-anythingllm-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-anythingllm-smoke-"));
 const port = 61988;
 const anythingPort = 61989;
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
@@ -162,8 +162,8 @@ const anythingServer = createServer((request, response) => {
     if (request.method === "POST" && route === "/v1/document/raw-text") {
       const body = await readJson(request) as UploadBody;
       uploadBodies.push(body);
-      const syncKey = String(body.metadata?.vectorForgeSyncKey ?? `missing-${uploadBodies.length}`);
-      const location = `custom-documents/vector-forge/${createHash("sha256").update(syncKey).digest("hex").slice(0, 40)}.json`;
+      const syncKey = String(body.metadata?.KnowledgeForgeSyncKey ?? `missing-${uploadBodies.length}`);
+      const location = `custom-documents/knowledge-forge/${createHash("sha256").update(syncKey).digest("hex").slice(0, 40)}.json`;
       sendJson(response, 200, { success: true, error: null, documents: [{ location, title: body.metadata?.title ?? "Untitled" }] });
       return;
     }
@@ -238,9 +238,9 @@ const server = spawn(process.execPath, [tsxCli, "server/index.ts"], {
   cwd: rootDir,
   env: {
     ...process.env,
-    VECTOR_FORGE_ROOT_DIR: rootDir,
-    VECTOR_FORGE_DATA_DIR: tempDir,
-    VECTOR_FORGE_PORT: String(port),
+    KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+    KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+    KNOWLEDGE_FORGE_PORT: String(port),
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -268,7 +268,7 @@ try {
   });
 
   const text = Array.from({ length: 80 }, (_, index) => (
-    `AnythingLLM idempotent sync sentinel ${index}. Vector Forge should upload each chunk once and persist its returned location.`
+    `AnythingLLM idempotent sync sentinel ${index}. Knowledge Forge should upload each chunk once and persist its returned location.`
   )).join("\n");
   const uploadForm = new FormData();
   uploadForm.append("files", new Blob([text], { type: "text/plain" }), "anything-sync.txt");
@@ -318,10 +318,10 @@ try {
   assert(embeddingCalls[1]?.adds.length === indexed.chunks, "Recovery sync update-embeddings adds count mismatch.");
   assert(embeddingCalls[1]?.deletes.length === 0, "Recovery sync should not send delete locations.");
 
-  const uploadedSyncKeys = uploadBodies.map((body) => body.metadata?.vectorForgeSyncKey);
-  assert(uploadedSyncKeys.every((key) => typeof key === "string" && key.startsWith("vf:anything-sync-smoke:")), "Uploaded metadata did not include stable Vector Forge sync keys.");
+  const uploadedSyncKeys = uploadBodies.map((body) => body.metadata?.KnowledgeForgeSyncKey);
+  assert(uploadedSyncKeys.every((key) => typeof key === "string" && key.startsWith("vf:anything-sync-smoke:")), "Uploaded metadata did not include stable Knowledge Forge sync keys.");
   assert(new Set(uploadedSyncKeys).size === indexed.chunks, "Uploaded sync keys were not unique per chunk.");
-  assert(uploadBodies.every((body) => typeof body.metadata?.vectorForgeTextHash === "string"), "Uploaded metadata did not include chunk text hashes.");
+  assert(uploadBodies.every((body) => typeof body.metadata?.KnowledgeForgeTextHash === "string"), "Uploaded metadata did not include chunk text hashes.");
 
   const afterRecovery = await fetchJson<{ documents: SyncedDocument[] }>("/api/collections/anything-sync-smoke/documents");
   const document = afterRecovery.documents.find((item) => item.id === indexedDocumentId);

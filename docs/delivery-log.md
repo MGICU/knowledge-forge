@@ -1,8 +1,8 @@
-# Vector Forge Lab Delivery Log
+﻿# Knowledge Forge Delivery Log
 
 Delivery date: 2026-06-25  
 Current version: `0.3.1`  
-Project path: `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab`
+Project path: `<KNOWLEDGE_FORGE_ROOT>`
 
 ## 0.3.1 Delivery Scope
 
@@ -10,9 +10,29 @@ This iteration prepares the project for public GitHub synchronization and tighte
 
 Public-facing docs were also rewritten so the repository explains the product clearly: local-first knowledge base, OCR/document ingestion, LanceDB vector search, MCP access, optional AnythingLLM sync, AI control safety, security boundaries, setup, build, verification, and roadmap.
 
+### 0.3.1 Validation
+
+- `npm run smoke:release` passed after the split-page UI and GitHub documentation work.
+- The release gate covered lint, TypeScript/Vite/server build, static button audit, local API/MCP smoke, persistence recovery, upload, document formats, directory import, onboarding, skip-capable OCR smoke, security redaction/CORS checks, AI tool policy, local-action token, MCP writes, fake OpenAI-compatible embedding provider, AnythingLLM sync/cleanup, AnythingLLM Desktop management, job cancel/retry, Electron UI smoke, desktop data-dir smoke, and desktop launch smoke.
+- Electron UI smoke reported `buttonCount: 101`, `nativeDialogCalls: 0`, `horizontalOverflow: false`, `aiToolCards: 8`, `mcpResourceRows: 7`, `installerDownloadCalls: 2`, `installerLaunchCallsAfterConfirm: 2`, and all guarded side-effect calls stayed at 0 before React confirmation.
+- Desktop data-dir smoke verified editable data root save/reset/relaunch, second launch with custom root, third launch back on default root, and `KNOWLEDGE_FORGE_DATA_DIR` env-lock behavior.
+- Desktop smoke returned app version `0.3.1` and active data directory under `%APPDATA%\knowledge-forge\data`.
+
+### 0.3.1 Source Backup
+
+- `outputs/project-backups/knowledge-forge-v0.3.1-20260625-200018.zip`
+- Backup verification: 52 zip entries, 0 excluded directory entries, embedded `package.json` version `0.3.1`.
+
+### 0.3.1 GitHub Preparation
+
+- Local Git repository initialized on `main`.
+- Initial commit created: `c2f5b0c Initial Knowledge Forge release`.
+- `.gitignore` excludes `data/`, `dist/`, `dist-server/`, `release/`, `node_modules/`, `.env*`, logs, temporary files, IDE files, coverage, TypeScript build info, and certificate/private-key file types.
+- `gh` is installed at `C:\Program Files\GitHub CLI\gh.exe`, but GitHub authentication is not yet complete. Remote push is pending user login and target repository selection.
+
 ## 0.3.0 Delivery Scope
 
-This release turns the merged Vector Forge / KB Forge direction into a practical Windows desktop deliverable. The application keeps Vector Forge Lab as the local vector database, document parsing, OCR, embedding, LanceDB, search, and MCP core. KB Forge capabilities are represented as desktop delivery, AnythingLLM management, sync safety, and local execution boundaries.
+This release turns the merged Knowledge Forge / KB Forge direction into a practical Windows desktop deliverable. The application keeps Knowledge Forge as the local vector database, document parsing, OCR, embedding, LanceDB, search, and MCP core. KB Forge capabilities are represented as desktop delivery, AnythingLLM management, sync safety, and local execution boundaries.
 
 ## Delivered Features
 
@@ -48,7 +68,7 @@ This release turns the merged Vector Forge / KB Forge direction into a practical
 - Sync recovery now handles the add-embedding half-success case: raw uploads can be persisted after a failed `update-embeddings` add call, and the next sync embeds those uploaded locations without uploading duplicate raw text.
 - Local document, batch document, and collection delete now call AnythingLLM workspace de-index with recorded uploaded locations before local sync metadata is removed.
 - Successful local document reprocess now calls AnythingLLM workspace de-index for the old recorded locations before fresh sync. If cleanup fails or is skipped because the saved base URL changed, the old sync metadata is preserved as document-level pending cleanup and can be retried from the document detail UI/API instead of being discarded.
-- AnythingLLM de-index calls are batched through `VECTOR_FORGE_ANYTHING_CLEANUP_BATCH_SIZE`.
+- AnythingLLM de-index calls are batched through `KNOWLEDGE_FORGE_ANYTHING_CLEANUP_BATCH_SIZE`.
 - Failed or credential-blocked AnythingLLM cleanup is now durable after local destructive commits. Cleanup intent is stored in `data/anythingllm-cleanup-queue.json`, can survive local document/collection deletion, and can be retried through `POST /api/anythingllm/cleanup-queue/retry`.
 - `GET /api/anythingllm/cleanup-queue` exposes queue status with API keys redacted.
 - The AnythingLLM configuration card now includes a global cleanup queue panel. Users can refresh queue status, inspect pending/prepared counts and per-entry metadata, see missing API-key states, and retry all or individual pending entries after an in-app confirmation.
@@ -95,7 +115,7 @@ This release turns the merged Vector Forge / KB Forge direction into a practical
 - Risky actions now have explicit React confirmation gates: AnythingLLM sync, AnythingLLM cleanup retry, cloud/Paddle OCR tests, installer folder open, installer launch, document delete, and batch delete.
 - Electron external-window handling now denies arbitrary protocols and only opens allowlisted HTTP/HTTPS hosts.
 - Desktop data-directory selection is available in onboarding/settings and is covered by `smoke:desktop:data-dir`.
-- Electron local-action token protection is active for trusted local desktop actions when Electron launches the API. With `VECTOR_FORGE_LOCAL_ACTION_TOKEN` set, all `/api` write requests now require `X-Vector-Forge-Local-Action-Token`.
+- Electron local-action token protection is active for trusted local desktop actions when Electron launches the API. With `KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN` set, all `/api` write requests now require `X-knowledge-forge-Local-Action-Token`.
 - AI control can now confirm and execute supported local handlers instead of only pointing at manual buttons.
 - Copying current knowledge-base parameters into the global default template now requires confirmation before writing `/api/config/copy-from-collection/:slug`.
 - Desktop relaunch after a pending data-directory change now requires confirmation before invoking the relaunch IPC.
@@ -165,7 +185,7 @@ This release turns the merged Vector Forge / KB Forge direction into a practical
 - Button audit smoke: `npm run smoke:buttons` statically checked 99 React native buttons and reported 0 missing/no-op/native-dialog issues.
 - Expanded Electron UI smoke: selected directory import after confirmation, AI free-text search, exact-name single-document delete, and task-center cancel all produced exactly one expected backend request and visible UI state change.
 - Expanded config/desktop UI smoke: edited current-collection config controls, saved them through `保存当前`, verified `configControlPayloadMatches: true` and `configControlPersisted: true`, then saved and cleared a fake local `AnythingLLM.exe` path with `anythingExePathSaveCalls: 1` and `anythingExePathClearCalls: 1`.
-- Desktop data-dir smoke: verified saved next-launch data root, `pendingRelaunch`, a second desktop launch using the custom root, reset to default, a third launch using the restored default root, persisted `desktop-settings.json` under isolated Electron `userData`, and `VECTOR_FORGE_DATA_DIR` env override lock for UI controls, save/reset IPC, and directory picker.
+- Desktop data-dir smoke: verified saved next-launch data root, `pendingRelaunch`, a second desktop launch using the custom root, reset to default, a third launch using the restored default root, persisted `desktop-settings.json` under isolated Electron `userData`, and `KNOWLEDGE_FORGE_DATA_DIR` env override lock for UI controls, save/reset IPC, and directory picker.
 - Real OCR smoke: `npm run smoke:ocr:real` ran Tesseract OCR against a generated PNG and returned one searchable OCR result.
 - Release artifact smoke: verified the unpacked exe, setup exe, portable exe, zip artifact, OCR traineddata resources, zip entries, and zip-embedded package version after the Windows rebuild.
 - Browser UI: 14 scanned candidates rendered 12 visible rows, selecting all checked only those 12 rows, and the UI reported 2 hidden candidates.
@@ -177,25 +197,25 @@ This release turns the merged Vector Forge / KB Forge direction into a practical
 ```json
 {
   "ok": true,
-  "title": "Vector Forge Lab",
+  "title": "Knowledge Forge",
   "appVersion": "0.3.0",
-  "dataDir": "C:\\Users\\jackwolf-power\\AppData\\Roaming\\vector-forge-lab\\data"
+  "dataDir": "C:\\Users\\jackwolf-power\\AppData\\Roaming\\knowledge-forge\\data"
 }
 ```
 - Target release gate: `npm run smoke:release:target` passed, including real OCR, desktop data-dir smoke, Windows artifact generation, and packaged desktop smoke.
 
 ## Release Artifacts
 
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\release\win-unpacked\Vector Forge Desktop.exe`
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\release\Vector Forge Desktop-Setup-0.3.0-x64.exe`
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\release\Vector Forge Desktop-Portable-0.3.0-x64.exe`
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\release\Vector Forge Desktop-0.3.0-x64.zip`
-- Support artifacts: `release\Vector Forge Desktop-Setup-0.3.0-x64.exe.blockmap`, `release\builder-debug.yml`.
+- `release\win-unpacked\Knowledge Forge.exe`
+- `release\Knowledge Forge-Setup-0.3.0-x64.exe`
+- `release\Knowledge Forge-Portable-0.3.0-x64.exe`
+- `release\Knowledge Forge-0.3.0-x64.zip`
+- Support artifacts: `release\Knowledge Forge-Setup-0.3.0-x64.exe.blockmap`, `release\builder-debug.yml`.
 
 ## Source Backup
 
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\outputs\project-backups\vector-forge-lab-v0.3.0-20260625-103607.zip`
-- Backup verification: 48 zip entries, 0 excluded directory entries. Archive entries are rooted at the project file level, not wrapped in a `vector-forge-lab/` parent directory.
+- `outputs/project-backups/knowledge-forge-v0.3.0-20260625-103607.zip`
+- Backup verification: 48 zip entries, 0 excluded directory entries. Archive entries are rooted at the project file level, not wrapped in a `knowledge-forge/` parent directory.
 
 ## Known Remaining Work
 

@@ -2581,3 +2581,424 @@ textarea {
     max-width: 136px;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   Page Transitions
+   ═══════════════════════════════════════════════ */
+
+.forge-main > * {
+  animation: pageEnter 0.22s ease-out;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Skeleton Loading
+   ═══════════════════════════════════════════════ */
+
+.skeleton {
+  background: linear-gradient(90deg, #e8ecf2 25%, #f0f3f8 37%, #e8ecf2 63%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+  height: 88px;
+  border-radius: 10px;
+}
+
+.skeleton-row {
+  height: 48px;
+  margin-bottom: 6px;
+}
+
+.skeleton-text {
+  height: 16px;
+  width: 60%;
+}
+
+.skeleton-text-short {
+  height: 16px;
+  width: 36%;
+}
+
+.skeleton-chip {
+  height: 20px;
+  width: 72px;
+  border-radius: 14px;
+}
+
+/* ═══════════════════════════════════════════════
+   Button Interactions
+   ═══════════════════════════════════════════════ */
+
+.button {
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.button:not(:disabled):hover {
+  filter: brightness(1.06);
+}
+
+.button.primary:not(:disabled):hover {
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.28);
+}
+
+.button.danger:not(:disabled):hover {
+  box-shadow: 0 2px 12px rgba(220, 38, 38, 0.22);
+}
+
+/* ═══════════════════════════════════════════════
+   Card Hover
+   ═══════════════════════════════════════════════ */
+
+.panel,
+.doc-row,
+.result-row,
+.inspector-panel {
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.panel:hover,
+.inspector-panel:hover {
+  border-color: #c8d4e2;
+}
+
+.doc-row:hover {
+  background: #f4f7fb;
+  border-color: #d0daea;
+}
+
+/* ═══════════════════════════════════════════════
+   Toast Animation
+   ═══════════════════════════════════════════════ */
+
+.toast-zone {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  animation: toastIn 0.28s ease-out;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  min-width: 240px;
+  max-width: 400px;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.toast.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.toast.info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+/* ═══════════════════════════════════════════════
+   Sidebar Active State
+   ═══════════════════════════════════════════════ */
+
+.side-nav button {
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.side-nav button.active {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+/* ═══════════════════════════════════════════════
+   Dialog Backdrop
+   ═══════════════════════════════════════════════ */
+
+.modal-overlay {
+  animation: overlayIn 0.18s ease-out;
+}
+
+.modal-content {
+  animation: modalIn 0.2s ease-out;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Progress Pulse
+   ═══════════════════════════════════════════════ */
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+}
+
+.status-dot.active {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════
+   Improved Empty States
+   ═══════════════════════════════════════════════ */
+
+.empty-table {
+  text-align: center;
+  padding: 48px 24px;
+  color: #8499b8;
+}
+
+.empty-table svg {
+  opacity: 0.4;
+  margin-bottom: 12px;
+}
+
+.empty-table p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
+
+.empty-table .hint {
+  font-size: 0.8rem;
+  color: #a3b5cc;
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════
+   Scrollbar Styling
+   ═══════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c8d4e2;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0b4cc;
+}
+
+/* ═══════════════════════════════════════════════
+   Global Loading Bar
+   ═══════════════════════════════════════════════ */
+
+.global-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 9999;
+  pointer-events: none;
+  background: transparent;
+}
+
+.global-loading-bar::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, #2563eb, #6366f1);
+  border-radius: 0 2px 2px 0;
+  animation: loadingBarSweep 1.2s ease-in-out infinite;
+}
+
+@keyframes loadingBarSweep {
+  0% { transform: translateX(-100%); width: 30%; }
+  50% { width: 50%; }
+  100% { transform: translateX(400%); width: 30%; }
+}
+
+/* ═══════════════════════════════════════════════
+   Console / Terminal Style
+   ═══════════════════════════════════════════════ */
+
+.mono-block {
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  background: #1a1e2b;
+  color: #c9d1d9;
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ═══════════════════════════════════════════════
+   Responsive Improvements
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .forge-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .forge-sidebar {
+    position: relative;
+    height: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 12px 16px;
+    gap: 8px;
+    border-right: none;
+    border-bottom: 1px solid #dfe6ef;
+  }
+
+  .side-nav {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .side-nav button {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .forge-main {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 500px) {
+  .forge-main {
+    padding: 12px;
+  }
+
+  .panel,
+  .inspector-panel {
+    padding: 14px;
+  }
+
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Filter Bar
+   ═══════════════════════════════════════════════ */
+
+.filter-bar {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: filterIn 0.18s ease-out;
+}
+
+@keyframes filterIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-row .field {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.filter-row .field span {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #5a6988;
+  margin-bottom: 3px;
+}
+
+.filter-row input,
+.filter-row select {
+  font-size: 0.82rem;
+  padding: 6px 10px;
+}

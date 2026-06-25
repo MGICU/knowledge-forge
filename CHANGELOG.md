@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 ## 0.3.1 - 2026-06-25
 
@@ -32,7 +32,7 @@
 - Added an MCP resource catalog to the UI with copy buttons for all seven read-only resource URIs, including embedding status, recent jobs, AnythingLLM sync status, and OCR/document quality.
 - Added AnythingLLM workspace de-index cleanup for document delete, batch delete, and collection delete using persisted per-chunk locations. `smoke:anythingllm` now verifies first sync, second-sync idempotency, and delete cleanup through fake `update-embeddings` `deletes`.
 - Added AnythingLLM reprocess cleanup: successful local reprocess deletes old recorded workspace embeddings before allowing a fresh sync; cleanup failures or skipped base URLs preserve prior sync metadata with a warning so later delete/retry still has locations.
-- Added cleanup batching for AnythingLLM de-index calls through `VECTOR_FORGE_ANYTHING_CLEANUP_BATCH_SIZE`.
+- Added cleanup batching for AnythingLLM de-index calls through `KNOWLEDGE_FORGE_ANYTHING_CLEANUP_BATCH_SIZE`.
 - Added document-level AnythingLLM cleanup retry: failed reprocess cleanup now marks old sync chunks as `cleanupPending`, document detail exposes a retry button, and `POST /api/collections/:slug/documents/:documentId/retry-anythingllm-cleanup` retries only the preserved locations.
 - Expanded `smoke:anythingllm` to cover upload sync, add-embedding half-success recovery without duplicate raw uploads, second-sync idempotency, reprocess cleanup, sync after reprocess, simulated cleanup failure, retry cleanup, sync after retry, and final delete cleanup.
 - Added `smoke:jobs` for deterministic queued-job cancel, running OCR cooperative cancel, single-document reprocess failure, failed-document state persistence, retry success with the same document ID, and post-retry search.
@@ -54,16 +54,16 @@
 - Added an AI strategy/audit panel that loads the backend tool registry and recent dry-run audit records without executing any tool actions.
 - Added React confirmation gates for AnythingLLM sync, document-level AnythingLLM cleanup retry, risky OCR tests, installer-folder open, and installer launch.
 - Hardened Electron external-window handling with an explicit HTTP/HTTPS host allowlist instead of opening arbitrary protocols through `shell.openExternal`.
-- Added desktop data-directory selection through a narrow Electron preload API. Users can choose/save/reset a data root, see the pending-relaunch state, and relaunch the app; `VECTOR_FORGE_DATA_DIR` remains the highest-priority override and locks desktop edits.
-- Added `smoke:desktop:data-dir` / `smoke:desktop:data-dir:built` and included the built data-dir smoke in both fast and target release gates. The smoke now verifies save, pending relaunch, reset back to default, `VECTOR_FORGE_DATA_DIR` env-lock UI, env-lock IPC rejection, and env-lock directory picker behavior.
-- Added a per-session Electron local-action token for trusted local actions. When Electron sets `VECTOR_FORGE_LOCAL_ACTION_TOKEN`, AI policy, AnythingLLM Desktop management, directory scan, and local-path import endpoints require `X-Vector-Forge-Local-Action-Token` in addition to loopback access.
+- Added desktop data-directory selection through a narrow Electron preload API. Users can choose/save/reset a data root, see the pending-relaunch state, and relaunch the app; `KNOWLEDGE_FORGE_DATA_DIR` remains the highest-priority override and locks desktop edits.
+- Added `smoke:desktop:data-dir` / `smoke:desktop:data-dir:built` and included the built data-dir smoke in both fast and target release gates. The smoke now verifies save, pending relaunch, reset back to default, `KNOWLEDGE_FORGE_DATA_DIR` env-lock UI, env-lock IPC rejection, and env-lock directory picker behavior.
+- Added a per-session Electron local-action token for trusted local actions. When Electron sets `KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN`, AI policy, AnythingLLM Desktop management, directory scan, and local-path import endpoints require `X-knowledge-forge-Local-Action-Token` in addition to loopback access.
 - AI control quick commands now create a visible pending action for supported write/test/sync/import commands. The user must click `确认执行`, then the panel calls the same real handlers used by the page buttons.
 - Import, scanned-path import, single-document reprocess, and batch reprocess now show a risk confirmation when the current knowledge-base config uses external embedding, cloud OCR, or PaddleOCR local execution.
 - Document management no longer hard-cuts access at 8 rows: users can show all documents, and directory scan results can show all candidates or import all candidates.
 - The `应用默认` action now opens a confirmation dialog summarizing the current/default embedding, OCR, and AnythingLLM settings before overwriting the collection config.
-- Expanded the per-session local-action token boundary so, when Electron sets `VECTOR_FORGE_LOCAL_ACTION_TOKEN`, all `/api` write requests require `X-Vector-Forge-Local-Action-Token`; this covers uploads, config writes, provider tests, reprocess/delete, search POSTs, AnythingLLM sync, AI dry-runs, and desktop/local actions.
+- Expanded the per-session local-action token boundary so, when Electron sets `KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN`, all `/api` write requests require `X-knowledge-forge-Local-Action-Token`; this covers uploads, config writes, provider tests, reprocess/delete, search POSTs, AnythingLLM sync, AI dry-runs, and desktop/local actions.
 - Added `smoke:local-action-token` to verify missing/wrong token rejection and correct-token authorization for AI dry-run, AnythingLLM environment, collection writes, embedding test, search, destructive batch delete, and AnythingLLM sync validation.
-- Added `smoke:mcp:writes` to verify MCP forwards `VECTOR_FORGE_LOCAL_ACTION_TOKEN` for local API write requests, rejects `vf_upsert_text` while `mcp.allowWrites=false`, and completes the token-protected `vf_upsert_text` -> `vf_search` -> `vf_get_document` -> `vf_delete_document` lifecycle.
+- Added `smoke:mcp:writes` to verify MCP forwards `KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN` for local API write requests, rejects `vf_upsert_text` while `mcp.allowWrites=false`, and completes the token-protected `vf_upsert_text` -> `vf_search` -> `vf_get_document` -> `vf_delete_document` lifecycle.
 - Added OpenAI-compatible embedding provider timeout and response validation. `smoke:embedding-provider` now uses a local fake provider to verify test/index/search success plus 401, bad response shape, dimension mismatch, and timeout error paths.
 - Added React confirmation gates for copying current knowledge-base parameters into the global default template and for desktop relaunch after data-directory changes. UI smoke verifies copy-default makes no API call before confirmation and one call after confirmation; data-dir smoke verifies relaunch confirmation with one dry-run relaunch request.
 - Single-document delete now removes the app-managed uploaded source copy under the data root when no other document references it; external source directories scanned by the user are still never deleted.
@@ -71,7 +71,7 @@
 - AnythingLLM workspace chips are cleared when the user switches knowledge bases or edits the visible AnythingLLM API URL/key, and `读取 Workspace` now requires both the draft base URL and API key.
 - Risk-confirmed imports and batch reprocesses now clear the relevant local selection state after successful confirmation; AI import with processing-risk confirmation clears attached files after the confirmed upload is queued.
 - Expanded Electron UI smoke to prove AI write/sync/apply-default commands use dry-run only and that OCR test, AnythingLLM sync, AnythingLLM cleanup, installer-folder open, installer launch, AI apply-default, risky upload, scanned-path import-all, single-document reprocess, and batch reprocess do not call backend side-effect endpoints before React confirmation. The same smoke now verifies document show-all, directory candidate show-all, import-all submits all candidates, AI strategy/audit panel loading with no secret leak, AnythingLLM connection/desktop test buttons, workspace-chip apply/save persistence, stale workspace-chip clearing after draft API changes, installer format/download/confirmed-launch request sequence, and risk-confirmed batch reprocess clears selection.
-- Isolated Electron UI smoke under a temporary `VECTOR_FORGE_USER_DATA_DIR` and widened the onboarding wait to remove profile/localStorage timing noise from release validation.
+- Isolated Electron UI smoke under a temporary `KNOWLEDGE_FORGE_USER_DATA_DIR` and widened the onboarding wait to remove profile/localStorage timing noise from release validation.
 - Added atomic JSON persistence with `.tmp` + `.bak` recovery for `config.json`, `manifest.json`, `onboarding.json`, and per-collection `*.documents.json`; `manifest` counts now reconcile from document records on load, and malformed trailing AI audit JSONL lines are ignored instead of breaking `/api/ai/tools/audit`.
 - Added `smoke:persistence` and included it in both release gates. It creates real API state, corrupts primary JSON files, verifies backup recovery, verifies AI audit bad-line tolerance, and verifies manifest document/chunk count reconciliation.
 - Added a durable top-level AnythingLLM cleanup queue at `data/anythingllm-cleanup-queue.json`. Document delete, collection delete, and reprocess now prepare cleanup intent before local destructive commits, activate it after local commit, and keep failed or credential-blocked cleanup entries retryable even after the local document or collection is gone.
@@ -89,15 +89,15 @@
 - Added `smoke:release:artifacts` and included it at the end of `smoke:release:target` after `dist:win:built` and packaged desktop smoke. It verifies setup exe, portable exe, zip, unpacked exe, OCR traineddata, and zip-embedded package version.
 - Expanded desktop data-dir smoke to launch a second desktop process with the saved custom data root, then a third process after reset to prove the default data root is restored.
 - Generated Windows artifacts:
-  - `release/win-unpacked/Vector Forge Desktop.exe`
-  - `release/Vector Forge Desktop-Setup-0.3.0-x64.exe`
-  - `release/Vector Forge Desktop-Portable-0.3.0-x64.exe`
-  - `release/Vector Forge Desktop-0.3.0-x64.zip`
+  - `release/win-unpacked/Knowledge Forge.exe`
+  - `release/Knowledge Forge-Setup-0.3.0-x64.exe`
+  - `release/Knowledge Forge-Portable-0.3.0-x64.exe`
+  - `release/Knowledge Forge-0.3.0-x64.zip`
 - Generated support artifacts:
-  - `release/Vector Forge Desktop-Setup-0.3.0-x64.exe.blockmap`
+  - `release/Knowledge Forge-Setup-0.3.0-x64.exe.blockmap`
   - `release/builder-debug.yml`
-- Packaged exe smoke passed with app version `0.3.0` and data directory under `%APPDATA%/vector-forge-lab/data`.
-- Latest source backup verified at `outputs/project-backups/vector-forge-lab-v0.3.0-20260625-103607.zip` with 48 zip entries and 0 excluded directory entries.
+- Packaged exe smoke passed with app version `0.3.0` and data directory under `%APPDATA%/knowledge-forge/data`.
+- Latest source backup verified at `outputs/project-backups/knowledge-forge-v0.3.0-20260625-103607.zip` with 48 zip entries and 0 excluded directory entries.
 - Known remaining gaps: data-directory changes are restart-bound rather than hot-swapped at runtime, AnythingLLM archive cleanup and raw custom-document file deletion semantics remain partial, the AI control console is still a local command router rather than a model-backed planner, and the app still uses the default Electron icon with `asar` disabled.
 
 ## 0.2.1 - 2026-06-24
@@ -111,7 +111,7 @@
 - Added MCP read-only resources for embedding provider status, recent jobs, AnythingLLM sync status, and OCR/document quality, with recursive secret redaction.
 - Added `smoke:security` and strengthened local security checks for loopback CORS, strict booleans, health redaction, and disabled AnythingLLM sync boundaries.
 - Verified all visible React buttons have click handlers, and browser-tested key workflows: navigation, OCR test, AnythingLLM test error path, document details, reprocess, filename-confirmed delete, desktop layout, and 390px mobile layout.
-- Version backup created under `outputs/project-backups/` using the `vector-forge-lab-v0.2.1-<YYYYMMDD-HHMMSS>.zip` naming convention.
+- Version backup created under `outputs/project-backups/` using the `knowledge-forge-v0.2.1-<YYYYMMDD-HHMMSS>.zip` naming convention.
 
 ## 0.2.0 - 2026-06-24
 
@@ -121,13 +121,13 @@
 - 更新支持格式说明，覆盖 TXT、Markdown、HTML、JSON、CSV/TSV、XML、LOG、YAML、PDF、DOCX 和图片 OCR 输入 PNG/JPEG/WebP/TIFF/BMP。
 - UI 重新设计为更稳定的知识库工作台：左侧知识库列表固定，主区聚焦导入/任务/文档/检索，右侧检查器承载文档详情和配置。
 - 修复 UI 文案乱码和常见桌面宽度下的拥挤问题；普通桌面默认两栏，超宽屏才启用常驻三栏。
-- 补充 v0.2.0 验证命令：`npx tsc -p tsconfig.server.json --noEmit`、`npx tsc -p tsconfig.app.json --noEmit`、`npm run lint`、`npm run build`、`npm run smoke`、`npm run smoke:upload`、`npm run smoke:documents`/`npm run smoke:formats`、`npm run smoke:ocr`；真实 OCR smoke 需设置 `VECTOR_FORGE_RUN_OCR_SMOKE=1`。
-- 增加 v0.2.0 备份路径约定：`outputs/project-backups/vector-forge-lab-v0.2.0-<YYYYMMDD-HHMMSS>.zip`。
+- 补充 v0.2.0 验证命令：`npx tsc -p tsconfig.server.json --noEmit`、`npx tsc -p tsconfig.app.json --noEmit`、`npm run lint`、`npm run build`、`npm run smoke`、`npm run smoke:upload`、`npm run smoke:documents`/`npm run smoke:formats`、`npm run smoke:ocr`；真实 OCR smoke 需设置 `KNOWLEDGE_FORGE_RUN_OCR_SMOKE=1`。
+- 增加 v0.2.0 备份路径约定：`outputs/project-backups/knowledge-forge-v0.2.0-<YYYYMMDD-HHMMSS>.zip`。
 - 补充已知风险：OCR 准确率、PDF/图片 OCR 性能成本、复杂 DOCX 还原限制、AnythingLLM 追加同步重复风险，以及 OCR 低置信度阈值尚未用于拒绝结果。
 
 ## 0.1.0 - 2026-06-24
 
-- 创建独立项目 `vector-forge-lab`，默认使用 LanceDB 做本地持久化向量库。
+- 创建独立项目 `knowledge-forge`，默认使用 LanceDB 做本地持久化向量库。
 - 实现 Web UI、Express API、文本入库、文件上传入库、集合管理、文档管理和本地检索。
 - 实现离线可用的 `local-hash` embedding provider，并支持 OpenAI-compatible embedding endpoint。
 - 实现 AnythingLLM API 鉴权测试和“追加上传到 AnythingLLM”能力。

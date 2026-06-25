@@ -1,17 +1,17 @@
-const { spawn } = require("node:child_process");
+﻿const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const electronPath = require("electron");
 
 async function runElectronSmokeCase(name, smokeEnv, envOverrides, cleanupPaths) {
-  const resultPath = path.join(os.tmpdir(), `vector-forge-data-dir-smoke-${name}-${process.pid}.json`);
+  const resultPath = path.join(os.tmpdir(), `knowledge-forge-data-dir-smoke-${name}-${process.pid}.json`);
   const child = spawn(electronPath, ["."], {
     cwd: process.cwd(),
     env: {
       ...process.env,
       ...smokeEnv,
-      VECTOR_FORGE_DESKTOP_SMOKE_RESULT: resultPath,
+      KNOWLEDGE_FORGE_DESKTOP_SMOKE_RESULT: resultPath,
       ...envOverrides,
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -82,11 +82,11 @@ async function runElectronSmokeCase(name, smokeEnv, envOverrides, cleanupPaths) 
 }
 
 async function runDataDirSmokeCase(name, envOverrides, cleanupPaths) {
-  return runElectronSmokeCase(name, { VECTOR_FORGE_DATA_DIR_SMOKE: "1" }, envOverrides, cleanupPaths);
+  return runElectronSmokeCase(name, { KNOWLEDGE_FORGE_DATA_DIR_SMOKE: "1" }, envOverrides, cleanupPaths);
 }
 
 async function runDesktopSmokeCase(name, envOverrides, cleanupPaths) {
-  return runElectronSmokeCase(name, { VECTOR_FORGE_DESKTOP_SMOKE: "1" }, envOverrides, cleanupPaths);
+  return runElectronSmokeCase(name, { KNOWLEDGE_FORGE_DESKTOP_SMOKE: "1" }, envOverrides, cleanupPaths);
 }
 
 function desktopSettingsPath(userDataDir) {
@@ -109,16 +109,16 @@ function assertSamePath(actual, expected, message) {
 }
 
 (async () => {
-  const editableUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "vector-forge-data-dir-user-data-editable-"));
-  const envLockUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "vector-forge-data-dir-user-data-env-lock-"));
-  const forcedDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "vector-forge-data-dir-env-override-"));
+  const editableUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "knowledge-forge-data-dir-user-data-editable-"));
+  const envLockUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "knowledge-forge-data-dir-user-data-env-lock-"));
+  const forcedDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "knowledge-forge-data-dir-env-override-"));
 
   try {
     const editable = await runDataDirSmokeCase(
       "editable",
       {
-        VECTOR_FORGE_DATA_DIR: "",
-        VECTOR_FORGE_USER_DATA_DIR: editableUserDataDir,
+        KNOWLEDGE_FORGE_DATA_DIR: "",
+        KNOWLEDGE_FORGE_USER_DATA_DIR: editableUserDataDir,
       },
       [],
     );
@@ -130,8 +130,8 @@ function assertSamePath(actual, expected, message) {
     const customRelaunch = await runDesktopSmokeCase(
       "editable-relaunch-custom",
       {
-        VECTOR_FORGE_DATA_DIR: "",
-        VECTOR_FORGE_USER_DATA_DIR: editableUserDataDir,
+        KNOWLEDGE_FORGE_DATA_DIR: "",
+        KNOWLEDGE_FORGE_USER_DATA_DIR: editableUserDataDir,
       },
       [],
     );
@@ -141,8 +141,8 @@ function assertSamePath(actual, expected, message) {
     const defaultRelaunch = await runDesktopSmokeCase(
       "editable-relaunch-default",
       {
-        VECTOR_FORGE_DATA_DIR: "",
-        VECTOR_FORGE_USER_DATA_DIR: editableUserDataDir,
+        KNOWLEDGE_FORGE_DATA_DIR: "",
+        KNOWLEDGE_FORGE_USER_DATA_DIR: editableUserDataDir,
       },
       [],
     );
@@ -151,8 +151,8 @@ function assertSamePath(actual, expected, message) {
     const envLock = await runDataDirSmokeCase(
       "env-lock",
       {
-        VECTOR_FORGE_DATA_DIR: forcedDataDir,
-        VECTOR_FORGE_USER_DATA_DIR: envLockUserDataDir,
+        KNOWLEDGE_FORGE_DATA_DIR: forcedDataDir,
+        KNOWLEDGE_FORGE_USER_DATA_DIR: envLockUserDataDir,
       },
       [envLockUserDataDir, forcedDataDir],
     );

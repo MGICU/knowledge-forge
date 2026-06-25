@@ -1,11 +1,11 @@
-import { spawn } from "node:child_process";
+﻿import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createCanvas } from "@napi-rs/canvas";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-ocr-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-ocr-smoke-"));
 const port = 61986;
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
 
@@ -60,15 +60,15 @@ function createOcrPng() {
   ctx.font = "bold 64px Arial";
   ctx.fillText("OCR TEST 2048", 70, 130);
   ctx.font = "32px Arial";
-  ctx.fillText("VECTOR FORGE OCR SENTINEL", 72, 184);
+  ctx.fillText("Knowledge Forge OCR SENTINEL", 72, 184);
   return canvas.toBuffer("image/png");
 }
 
-if (process.env.VECTOR_FORGE_RUN_OCR_SMOKE !== "1") {
-  if (process.env.VECTOR_FORGE_REQUIRE_OCR_SMOKE === "1") {
-    throw new Error("Real OCR smoke is required. Set VECTOR_FORGE_RUN_OCR_SMOKE=1 or run npm run smoke:ocr:real.");
+if (process.env.KNOWLEDGE_FORGE_RUN_OCR_SMOKE !== "1") {
+  if (process.env.KNOWLEDGE_FORGE_REQUIRE_OCR_SMOKE === "1") {
+    throw new Error("Real OCR smoke is required. Set KNOWLEDGE_FORGE_RUN_OCR_SMOKE=1 or run npm run smoke:ocr:real.");
   }
-  console.log(JSON.stringify({ ok: true, skipped: true, reason: "Set VECTOR_FORGE_RUN_OCR_SMOKE=1 to run real Tesseract OCR smoke." }, null, 2));
+  console.log(JSON.stringify({ ok: true, skipped: true, reason: "Set KNOWLEDGE_FORGE_RUN_OCR_SMOKE=1 to run real Tesseract OCR smoke." }, null, 2));
   process.exit(0);
 }
 
@@ -77,9 +77,9 @@ const server = spawn(process.execPath, [tsxCli, "server/index.ts"], {
   cwd: rootDir,
   env: {
     ...process.env,
-    VECTOR_FORGE_ROOT_DIR: rootDir,
-    VECTOR_FORGE_DATA_DIR: tempDir,
-    VECTOR_FORGE_PORT: String(port),
+    KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+    KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+    KNOWLEDGE_FORGE_PORT: String(port),
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

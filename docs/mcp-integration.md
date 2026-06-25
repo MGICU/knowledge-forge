@@ -1,13 +1,13 @@
-# Vector Forge Lab MCP 接入教程
+﻿# Knowledge Forge MCP 接入教程
 
-本教程说明如何让 Claude Desktop、Cursor、Codex 或其他支持 MCP 的 AI 软件调用 Vector Forge Lab 的本地向量库。
+本教程说明如何让 Claude Desktop、Cursor、Codex 或其他支持 MCP 的 AI 软件调用 Knowledge Forge 的本地向量库。
 
 ## 1. 先验证项目可运行
 
 在项目目录执行：
 
 ```powershell
-cd C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab
+cd C:\path\to\knowledge-forge
 npm install
 npm run smoke
 ```
@@ -36,19 +36,21 @@ npm run mcp
 推荐给 MCP 客户端配置的实际命令：
 
 ```powershell
-node C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\node_modules\tsx\dist\cli.mjs C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\server\mcp.ts
+node C:\path\to\knowledge-forge\node_modules\tsx\dist\cli.mjs C:\path\to\knowledge-forge\server\mcp.ts
 ```
+
+请把 `C:\path\to\knowledge-forge` 替换为你本机项目目录的绝对路径。
 
 如果已经运行 API，可指定：
 
 ```powershell
-$env:VECTOR_FORGE_API_URL="http://127.0.0.1:5183"
+$env:KNOWLEDGE_FORGE_API_URL="http://127.0.0.1:5183"
 ```
 
 如果没运行 API，MCP 默认会自动启动一个临时本地 API。可用以下变量关闭：
 
 ```powershell
-$env:VECTOR_FORGE_MCP_AUTOSTART="false"
+$env:KNOWLEDGE_FORGE_MCP_AUTOSTART="false"
 ```
 
 ## 3. Claude Desktop 配置示例
@@ -58,15 +60,15 @@ $env:VECTOR_FORGE_MCP_AUTOSTART="false"
 ```json
 {
   "mcpServers": {
-    "vector-forge-lab": {
+    "knowledge-forge": {
       "command": "node",
       "args": [
-        "C:\\Users\\jackwolf-power\\Documents\\Codex\\2026-06-21\\r\\work\\vector-forge-lab\\node_modules\\tsx\\dist\\cli.mjs",
-        "C:\\Users\\jackwolf-power\\Documents\\Codex\\2026-06-21\\r\\work\\vector-forge-lab\\server\\mcp.ts"
+        "C:\\path\\to\\knowledge-forge\\node_modules\\tsx\\dist\\cli.mjs",
+        "C:\\path\\to\\knowledge-forge\\server\\mcp.ts"
       ],
       "env": {
-        "VECTOR_FORGE_ROOT_DIR": "C:\\Users\\jackwolf-power\\Documents\\Codex\\2026-06-21\\r\\work\\vector-forge-lab",
-        "VECTOR_FORGE_DATA_DIR": "C:\\Users\\jackwolf-power\\Documents\\Codex\\2026-06-21\\r\\work\\vector-forge-lab\\data"
+        "KNOWLEDGE_FORGE_ROOT_DIR": "C:\\path\\to\\knowledge-forge",
+        "KNOWLEDGE_FORGE_DATA_DIR": "C:\\path\\to\\knowledge-forge\\data"
       }
     }
   }
@@ -79,15 +81,15 @@ AnythingLLM 支持把外部 MCP server 接入 agent。可在 AnythingLLM 的 MCP
 
 ```json
 {
-  "vector-forge-lab": {
+  "knowledge-forge": {
     "command": "node",
     "args": [
-      "C:\\Users\\jackwolf-power\\Documents\\Codex\\2026-06-21\\r\\work\\vector-forge-lab\\node_modules\\tsx\\dist\\cli.mjs",
-      "C:\\Users\\jackwolf-power\\Documents\\Codex\\2026-06-21\\r\\work\\vector-forge-lab\\server\\mcp.ts"
+      "C:\\path\\to\\knowledge-forge\\node_modules\\tsx\\dist\\cli.mjs",
+      "C:\\path\\to\\knowledge-forge\\server\\mcp.ts"
     ],
     "env": {
-      "VECTOR_FORGE_ROOT_DIR": "C:\\Users\\jackwolf-power\\Documents\\Codex\\2026-06-21\\r\\work\\vector-forge-lab",
-      "VECTOR_FORGE_DATA_DIR": "C:\\Users\\jackwolf-power\\Documents\\Codex\\2026-06-21\\r\\work\\vector-forge-lab\\data"
+      "KNOWLEDGE_FORGE_ROOT_DIR": "C:\\path\\to\\knowledge-forge",
+      "KNOWLEDGE_FORGE_DATA_DIR": "C:\\path\\to\\knowledge-forge\\data"
     }
   }
 }
@@ -97,19 +99,19 @@ AnythingLLM 支持把外部 MCP server 接入 agent。可在 AnythingLLM 的 MCP
 
 ## 5. 暴露的 MCP Resources
 
-- `vectorforge://health`
+- `KnowledgeForge://health`
   - API 健康状态、版本、LanceDB 路径、表列表、配置摘要。
-- `vectorforge://collections`
+- `KnowledgeForge://collections`
   - 所有本地向量集合。
-- `vectorforge://collections/{slug}/documents`
+- `KnowledgeForge://collections/{slug}/documents`
   - 指定集合下的文档列表。
-- `vectorforge://embedding-provider/status`
+- `KnowledgeForge://embedding-provider/status`
   - 当前 embedding provider 配置和各知识库索引兼容状态；只显示 key 是否配置，不返回密钥。
-- `vectorforge://jobs/recent`
+- `KnowledgeForge://jobs/recent`
   - 最近上传、解析、OCR、embedding、同步和重处理任务。
-- `vectorforge://anythingllm/sync-status`
+- `KnowledgeForge://anythingllm/sync-status`
   - 本地记录的 AnythingLLM 同步状态、workspace slug、location 计数和清理状态；不主动访问 AnythingLLM。
-- `vectorforge://documents/quality`
+- `KnowledgeForge://documents/quality`
   - OCR/解析质量报告概览，包括低置信度、失败、警告、解析器覆盖和是否需要人工复核。
 
 桌面 UI 的 `MCP` 卡片也列出这些 URI，并提供复制按钮；`{slug}` 会按当前知识库替换，方便直接贴到 AI 客户端或调试脚本里。
@@ -153,7 +155,7 @@ vf_search(collection="你的集合 slug", query="你的问题", topK=8)
 
 需要开启时：
 
-1. 打开 Vector Forge Lab UI。
+1. 打开 Knowledge Forge UI。
 2. 在“模型 / MCP / AnythingLLM”区域勾选 `MCP 允许写入`。
 3. 点击 `保存配置`。
 

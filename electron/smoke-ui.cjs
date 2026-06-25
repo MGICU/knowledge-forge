@@ -1,21 +1,21 @@
-const { spawn } = require("node:child_process");
+﻿const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const electronPath = require("electron");
 
-const resultPath = path.join(os.tmpdir(), `vector-forge-ui-smoke-${process.pid}.json`);
-const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "vector-forge-ui-smoke-data-"));
-const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "vector-forge-ui-smoke-user-data-"));
+const resultPath = path.join(os.tmpdir(), `knowledge-forge-ui-smoke-${process.pid}.json`);
+const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "knowledge-forge-ui-smoke-data-"));
+const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "knowledge-forge-ui-smoke-user-data-"));
 
 const child = spawn(electronPath, ["--disable-gpu", "--disable-gpu-sandbox", "--disable-gpu-compositing", "--disable-gpu-rasterization", "--in-process-gpu", "--no-proxy-server", "--no-sandbox", "."], {
   cwd: process.cwd(),
   env: {
     ...process.env,
-    VECTOR_FORGE_UI_SMOKE: "1",
-    VECTOR_FORGE_DESKTOP_SMOKE_RESULT: resultPath,
-    VECTOR_FORGE_DATA_DIR: dataDir,
-    VECTOR_FORGE_USER_DATA_DIR: userDataDir,
+    KNOWLEDGE_FORGE_UI_SMOKE: "1",
+    KNOWLEDGE_FORGE_DESKTOP_SMOKE_RESULT: resultPath,
+    KNOWLEDGE_FORGE_DATA_DIR: dataDir,
+    KNOWLEDGE_FORGE_USER_DATA_DIR: userDataDir,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

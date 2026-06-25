@@ -7,6 +7,10 @@ import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import Tesseract from "tesseract.js";
 
+declare module "pptx2json" {
+  export function parseAsync(buf: Buffer): Promise<{ slides: Array<{ shapes?: Array<{ text?: string }> }> }>;
+}
+
 export type DuplicateStrategy = "skip" | "version" | "replace";
 export type OcrMode = "auto" | "tesseract" | "paddleocr" | "cloud";
 export type ParserType =
@@ -18,6 +22,8 @@ export type ParserType =
   | "pdf-ocr"
   | "docx"
   | "image-ocr"
+  | "xlsx"
+  | "pptx"
   | "unknown";
 
 export type ExtractionPage = {
@@ -168,6 +174,82 @@ export function hashBuffer(buffer: Buffer) {
   return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
+
+async function extractXlsx(buffer: Buffer): Promise<Omit<ExtractionResult, "mime" | "contentHash" | "originalSizeBytes">> {
+  const XLSX = await import("xlsx");
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const pages: ExtractionPage[] = [];
+  let fullText = "";
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const csvText = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
+    if (csvText.trim()) {
+      pages.push({
+        pageNumber: pages.length + 1,
+        sectionTitle: sheetName,
+        text: csvText,
+        extractor: "xlsx",
+        confidence: 100,
+      });
+      fullText += `[Sheet: ${sheetName}]\n${csvText}\n\n`;
+    }
+  }
+
+  return {
+    text: fullText.trim(),
+    pages,
+    parserType: "xlsx",
+    parserVersion: "xlsx-1.0",
+    pageCount: pages.length,
+    ocrEngine: undefined,
+    ocrLanguage: undefined,
+    ocrConfidence: null,
+    warnings: pages.length === 0 ? ["No readable sheets found"] : [],
+    extractedTextBytes: Buffer.byteLength(fullText, "utf-8"),
+  };
+}
+
+
+async function extractPptx(buffer: Buffer): Promise<Omit<ExtractionResult, "mime" | "contentHash" | "originalSizeBytes">> {
+  const pptx2json = await import("pptx2json");
+  const result = await pptx2json.parseAsync(buffer);
+  const pages: ExtractionPage[] = [];
+  let fullText = "";
+
+  for (let i = 0; i < result.slides.length; i++) {
+    const slide = result.slides[i];
+    const texts: string[] = [];
+    for (const shape of slide.shapes || []) {
+      if (shape.text) texts.push(shape.text);
+    }
+    const slideText = texts.join("\n");
+    if (slideText.trim()) {
+      pages.push({
+        pageNumber: i + 1,
+        sectionTitle: `Slide ${i + 1}`,
+        text: slideText,
+        extractor: "pptx",
+        confidence: 100,
+      });
+      fullText += `[Slide ${i + 1}]\n${slideText}\n\n`;
+    }
+  }
+
+  return {
+    text: fullText.trim(),
+    pages,
+    parserType: "pptx",
+    parserVersion: "pptx-1.0",
+    pageCount: pages.length,
+    ocrEngine: undefined,
+    ocrLanguage: undefined,
+    ocrConfidence: null,
+    warnings: pages.length === 0 ? ["No text found in slides"] : [],
+    extractedTextBytes: Buffer.byteLength(fullText, "utf-8"),
+  };
+}
+
 export async function extractDocument(input: ExtractInput): Promise<ExtractionResult> {
   const config = normalizeParserConfig(input.config);
   input.onProgress?.({ phase: "extracting", progress: 0.05, message: "读取文件" });
@@ -188,6 +270,12 @@ export async function extractDocument(input: ExtractInput): Promise<ExtractionRe
 
   if (extension === ".pdf" || mime === "application/pdf") {
     return { ...base, ...(await extractPdf(buffer, input.originalName, config, input.onProgress, input.shouldCancel)) };
+  }
+  if (extension === ".xlsx" || extension === ".xls" || mime === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || mime === "application/vnd.ms-excel") {
+    return { ...base, ...(await extractXlsx(buffer)) };
+  }
+  if (extension === ".pptx" || mime === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
+    return { ...base, ...(await extractPptx(buffer)) };
   }
   if (extension === ".docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
     return { ...base, ...(await extractDocx(buffer, config, input.onProgress)) };

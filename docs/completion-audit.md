@@ -1,4 +1,4 @@
-# Vector Forge Lab Completion Audit
+﻿# Knowledge Forge Completion Audit
 
 Audit date: 2026-06-25  
 Audited version: `0.3.1`  
@@ -7,6 +7,8 @@ Scope: current repository state after desktop packaging, desktop data-directory 
 ## Summary
 
 v0.3.1 is the current repository iteration. It keeps the v0.3.0 desktop/vector-search baseline and adds the split-page UI architecture, page-by-page Electron UI smoke coverage, data-directory smoke adaptation for the new Settings page, and public GitHub documentation polish.
+
+Current verification note: `npm run smoke:release` passed on the current `0.3.1` source after adding the MCP beginner guide and GitHub launch documentation. Local Git is initialized on `main` with initial commit `c2f5b0c`; no GitHub remote is configured yet because GitHub CLI authentication is still pending. Source backup `knowledge-forge-v0.3.1-20260625-200018.zip` was verified with 52 entries, 0 excluded directory entries, and package version `0.3.1`.
 
 The strongest completed areas are local LanceDB ingestion/search, PDF/DOCX/image OCR parsing, collection-scoped configuration, document detail/reprocess/delete flows, managed uploaded source-copy cleanup on document delete, atomic JSON metadata recovery, persisted onboarding, restart-bound desktop data-directory selection, MCP read resources, AnythingLLM idempotent upload tracking, AnythingLLM delete and reprocess de-index for recorded locations, durable orphan cleanup retry after local deletion, document-level and global AnythingLLM cleanup retry UI, scan-session-bound local directory ingestion, AnythingLLM Desktop management, trusted local-action token protection for Electron write routes, AI dry-run policy enforcement with confirmed local actions, React confirmation gates for external/local/destructive actions, deterministic job cancel/retry coverage, Electron packaging, static button audit smoke, expanded UI button-path smoke coverage, real-OCR target-machine smoke, and packaged-app smoke validation.
 
@@ -33,23 +35,23 @@ The main remaining gaps are hot-swapped runtime data-directory switching, Anythi
 | Native button reliability | Complete for current React button surface | `server/button-audit-smoke.ts`; `npm run smoke:buttons`; current audit result checks 99 native buttons and reports 0 missing/no-op/native-dialog issues. | Add matching UI smoke paths for new side-effect buttons; static audit proves handlers exist but does not replace rendered interaction testing. |
 | Task cancel coverage | Complete for queued/running cooperative cancel | `POST /api/jobs/:jobId/cancel`; UI cancel for queued/running jobs; `server/job-cancel-retry-smoke.ts` verifies queued cancel, running cloud-OCR cooperative cancel, no document creation, and one OCR request before cancellation. | Add deeper cancellation checks only if new long-running embedding/indexing stages are introduced. |
 | Task retry coverage | Complete for indexed reprocess and processing-stage failed uploads | Reprocess and batch reprocess work for indexed documents with original uploaded copies; `server/job-cancel-retry-smoke.ts` verifies failed reprocess retry and processing-stage failed upload retry on the same document ID. | Save-copy failures and cancelled jobs intentionally may not create retryable documents. |
-| MCP management surface | Complete for read resources and current write-tool lifecycle | `server/mcp.ts` read tools/resources; write tools gated by `mcp.allowWrites`; MCP forwards `VECTOR_FORGE_LOCAL_ACTION_TOKEN` for local API writes; the UI lists all seven read-only resource URIs with copy buttons; `server/smoke.ts` lists/reads 7 resources and checks secret redaction; `server/mcp-write-smoke.ts` verifies disabled writes plus token-protected upsert/search/get/delete; Electron UI smoke reports `mcpResourceRows: 7`. | Add MCP resources/tools for scan jobs and cleanup status only after those workflows mature. |
+| MCP management surface | Complete for read resources and current write-tool lifecycle | `server/mcp.ts` read tools/resources; write tools gated by `mcp.allowWrites`; MCP forwards `KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN` for local API writes; the UI lists all seven read-only resource URIs with copy buttons; `server/smoke.ts` lists/reads 7 resources and checks secret redaction; `server/mcp-write-smoke.ts` verifies disabled writes plus token-protected upsert/search/get/delete; Electron UI smoke reports `mcpResourceRows: 7`. | Add MCP resources/tools for scan jobs and cleanup status only after those workflows mature. |
 | Electron exe / portable zip | Complete | `electron/main.cjs`; `electron/preload.cjs`; `electron/smoke.cjs`; `electron/smoke-data-dir.cjs`; `electron/smoke-packaged.cjs`; `package.json` builder config. | Add custom icon, signing strategy, and asar optimization later. |
 | Desktop packaging validation | Complete for launch/readiness smoke | `npm run pack:win`; `npm run dist:win`; `npm run smoke:desktop:packaged`. | Add installer install/uninstall smoke if release process needs it. |
 | Release smoke gating | Strong fast gate plus target-machine gate | `smoke:release` runs lint, build, static button audit, local smokes, persistence recovery, onboarding, security, AI tools policy, local-action token boundary, AnythingLLM, AnythingLLM Desktop, job retry, UI smoke, desktop data-dir smoke, and desktop smoke. `smoke:release:target` adds `smoke:ocr:real`, artifact generation, packaged desktop smoke, and `smoke:release:artifacts`. | Keep using the target gate before binary delivery when OCR and artifacts must be proven on the target machine. |
 
 ## Delivered Artifacts
 
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\release\win-unpacked\Vector Forge Desktop.exe`
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\release\Vector Forge Desktop-Setup-0.3.0-x64.exe`
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\release\Vector Forge Desktop-Portable-0.3.0-x64.exe`
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\work\vector-forge-lab\release\Vector Forge Desktop-0.3.0-x64.zip`
-- Support artifacts generated for traceability: `release\Vector Forge Desktop-Setup-0.3.0-x64.exe.blockmap`, `release\builder-debug.yml`.
+- `release\win-unpacked\Knowledge Forge.exe`
+- `release\Knowledge Forge-Setup-0.3.0-x64.exe`
+- `release\Knowledge Forge-Portable-0.3.0-x64.exe`
+- `release\Knowledge Forge-0.3.0-x64.zip`
+- Support artifacts generated for traceability: `release\Knowledge Forge-Setup-0.3.0-x64.exe.blockmap`, `release\builder-debug.yml`.
 
 ## Source Backup
 
-- `C:\Users\jackwolf-power\Documents\Codex\2026-06-21\r\outputs\project-backups\vector-forge-lab-v0.3.0-20260625-103607.zip`
-- Backup verification: 48 zip entries, 0 excluded directory entries. Archive entries are rooted at the project file level, not wrapped in a `vector-forge-lab/` parent directory.
+- `outputs/project-backups/knowledge-forge-v0.3.0-20260625-103607.zip`
+- Backup verification: 48 zip entries, 0 excluded directory entries. Archive entries are rooted at the project file level, not wrapped in a `knowledge-forge/` parent directory.
 
 ## Tests Passed
 
@@ -95,7 +97,7 @@ Additional browser checks passed:
 - Electron UI smoke: onboarding, collection creation dialog, config-control edit/save persistence, custom `AnythingLLM.exe` save/clear persistence, document show-all, directory candidate show-all/import-all, MCP resource list/copy control, copy-default confirmation, AI strategy/audit panel loading, AnythingLLM connection/desktop test buttons, AnythingLLM environment refresh, workspace-chip apply/save persistence, stale workspace-chip clearing, installer format/download/confirmed-launch request sequence, batch delete confirmation dialog, AI dry-run guard, dangerous-action confirmation guard, global cleanup queue confirmation guard, per-entry cleanup queue retry confirmation/payload, processing-risk confirmation for upload/import/reprocess/batch-reprocess, citation copy, onboarding reset, text indexing, search, and document-detail open passed through real UI buttons, with `mcpResourceRows: 7`, `copyDefaultCalls: 1`, `nativeDialogCalls: 0`, `aiBlockedDirectCalls: 0`, `aiToolCards: 8`, `aiAuditRows: 4`, `aiAuditHasSecret: false`, `configControlPayloadMatches: true`, `configControlPersisted: true`, `anythingEnvironmentRefreshCalls: 1`, `anythingEnvironmentRefreshUpdatedInput: true`, `anythingExePathSaveCalls: 1`, `anythingExePathClearCalls: 1`, `desktopActionCallsBeforeConfirm: 0`, `ocrTestCallsBeforeConfirm: 0`, `syncCallsBeforeConfirm: 0`, `cleanupCallsBeforeConfirm: 0`, `cleanupQueueCallsBeforeConfirm: 0`, `cleanupQueueSingleRetrySubmitCalls: 1`, `cleanupQueueSingleRetryPayloadMatches: true`, `citationCopyMatches: true`, `onboardingResetDialogCalls: 1`, `anythingConnectionTestCalls: 1`, `anythingDesktopTestCalls: 1`, `workspaceChipClicked: true`, `workspaceChipPersisted: true`, `workspaceChipsClearedAfterDraftChange: true`, `installerDownloadCalls: 2`, `installerLaunchCallsAfterConfirm: 2`, `riskUploadCalls: 1`, `riskImportCalls: 1`, `riskReprocessCalls: 1`, and `riskBatchReprocessCalls: 1`.
 - Button audit smoke: checked 99 native React buttons and reported 0 missing/no-op/native-dialog issues.
 - Expanded Electron UI button-path smoke: selected scanned-path import after risk confirmation, AI free-text search dry-run plus search execution, exact-name single-document delete, and task-center cancel each produced exactly one expected backend request plus the expected visible state change.
-- Electron data-dir smoke: saved a custom next-launch data root, verified `pendingRelaunch`, verified a second launch used the custom root, reset back to default, verified a third launch used the restored default root, verified `desktop-settings.json` persistence under isolated Electron `userData`, and verified `VECTOR_FORGE_DATA_DIR` env override locks UI controls plus save/reset IPC and directory picker.
+- Electron data-dir smoke: saved a custom next-launch data root, verified `pendingRelaunch`, verified a second launch used the custom root, reset back to default, verified a third launch used the restored default root, verified `desktop-settings.json` persistence under isolated Electron `userData`, and verified `KNOWLEDGE_FORGE_DATA_DIR` env override locks UI controls plus save/reset IPC and directory picker.
 - Persistence smoke: corrupted primary config, manifest, onboarding, and document JSON files, recovered each from `.bak`, skipped a malformed AI audit JSONL line, and repaired manifest document/chunk counts from document records.
 - AnythingLLM cleanup queue smoke: after simulated remote delete failure, local document deletion still completed, the orphan locations stayed in the durable cleanup queue, global retry deleted them, and mismatched-baseUrl collection deletion preserved cleanup intent without calling the wrong endpoint.
 - Release artifact smoke: verified setup exe, portable exe, zip, unpacked exe, OCR traineddata resources, selected zip entries, and zip-embedded package version after target Windows rebuild.

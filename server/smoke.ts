@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+﻿import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -6,7 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-smoke-"));
 const port = 61983;
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
 
@@ -118,9 +118,9 @@ const server = spawn(process.execPath, [tsxCli, "server/index.ts"], {
   cwd: rootDir,
   env: {
     ...process.env,
-    VECTOR_FORGE_ROOT_DIR: rootDir,
-    VECTOR_FORGE_DATA_DIR: tempDir,
-    VECTOR_FORGE_PORT: String(port),
+    KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+    KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+    KNOWLEDGE_FORGE_PORT: String(port),
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -218,14 +218,14 @@ try {
     method: "POST",
     body: JSON.stringify({
       name: "smoke-note.txt",
-      text: "Vector Forge Lab stores local vectors in LanceDB and exposes search through MCP. This smoke document should be searchable.",
+      text: "Knowledge Forge stores local vectors in LanceDB and exposes search through MCP. This smoke document should be searchable.",
     }),
   });
   assert(indexed.chunks >= 1, "Text was not chunked and indexed.");
 
   const search = await fetchJson<{ results: Array<{ documentId: string; text: string }> }>("/api/collections/smoke/search", {
     method: "POST",
-    body: JSON.stringify({ query: "How does Vector Forge expose search?", topK: 3 }),
+    body: JSON.stringify({ query: "How does Knowledge Forge expose search?", topK: 3 }),
   });
   assert(search.results.length >= 1, "Search returned no results.");
   assert(search.results[0].documentId === indexed.document.id, "Search did not return the indexed document.");
@@ -287,30 +287,30 @@ try {
     stderr: "pipe",
     env: {
       ...process.env,
-      VECTOR_FORGE_ROOT_DIR: rootDir,
-      VECTOR_FORGE_DATA_DIR: tempDir,
-      VECTOR_FORGE_API_URL: `http://127.0.0.1:${port}`,
-      VECTOR_FORGE_MCP_AUTOSTART: "false",
+      KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+      KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+      KNOWLEDGE_FORGE_API_URL: `http://127.0.0.1:${port}`,
+      KNOWLEDGE_FORGE_MCP_AUTOSTART: "false",
     },
   });
-  const client = new Client({ name: "vector-forge-smoke", version: "0.1.0" });
+  const client = new Client({ name: "knowledge-forge-smoke", version: "0.1.0" });
   await client.connect(transport);
   await client.ping();
   const tools = await client.listTools();
   assert(tools.tools.some((tool) => tool.name === "vf_search"), "MCP vf_search tool missing.");
   const resourceUris = [
-    "vectorforge://health",
-    "vectorforge://collections",
-    "vectorforge://collections/smoke/documents",
-    "vectorforge://embedding-provider/status",
-    "vectorforge://jobs/recent",
-    "vectorforge://anythingllm/sync-status",
-    "vectorforge://documents/quality",
+    "KnowledgeForge://health",
+    "KnowledgeForge://collections",
+    "KnowledgeForge://collections/smoke/documents",
+    "KnowledgeForge://embedding-provider/status",
+    "KnowledgeForge://jobs/recent",
+    "KnowledgeForge://anythingllm/sync-status",
+    "KnowledgeForge://documents/quality",
   ];
   const listedResources = await client.listResources();
   const listedResourceJson = JSON.stringify(listedResources.resources);
-  assert(listedResourceJson.includes("vectorforge://health"), "MCP health resource missing from listResources.");
-  assert(listedResourceJson.includes("vectorforge://embedding-provider/status"), "MCP embedding status resource missing from listResources.");
+  assert(listedResourceJson.includes("KnowledgeForge://health"), "MCP health resource missing from listResources.");
+  assert(listedResourceJson.includes("KnowledgeForge://embedding-provider/status"), "MCP embedding status resource missing from listResources.");
   const readResources = [];
   for (const uri of resourceUris) {
     const resource = await client.readResource({ uri });

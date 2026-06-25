@@ -1,17 +1,17 @@
-const { spawn } = require("node:child_process");
+﻿const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const electronPath = require("electron");
 
-const resultPath = path.join(os.tmpdir(), `vector-forge-desktop-smoke-${process.pid}.json`);
+const resultPath = path.join(os.tmpdir(), `knowledge-forge-desktop-smoke-${process.pid}.json`);
 
 const child = spawn(electronPath, ["."], {
   cwd: process.cwd(),
   env: {
     ...process.env,
-    VECTOR_FORGE_DESKTOP_SMOKE: "1",
-    VECTOR_FORGE_DESKTOP_SMOKE_RESULT: resultPath,
+    KNOWLEDGE_FORGE_DESKTOP_SMOKE: "1",
+    KNOWLEDGE_FORGE_DESKTOP_SMOKE_RESULT: resultPath,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

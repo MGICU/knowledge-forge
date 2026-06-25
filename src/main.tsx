@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { createRoot } from "react-dom/client";
 import {
   AlertCircle,
@@ -164,6 +164,10 @@ type DocumentRecord = {
   originalName?: string;
   extractedTextPath?: string;
   anythingLocations?: string[];
+  archived?: boolean;
+  archivedAt?: string;
+  notes?: string;
+  tags?: string[];
   anythingSync?: {
     version: 1;
     updatedAt?: string;
@@ -228,6 +232,35 @@ type SearchResult = {
   sectionTitle?: string;
   extractor?: string;
   confidence?: number;
+};
+
+
+type OcrQualityReport = {
+  collectionSlug: string;
+  totalDocuments: number;
+  ocrDocuments: number;
+  nativeTextDocuments: number;
+  totalPages: number;
+  nativeTextPages: number;
+  ocrPages: number;
+  failedPages: number;
+  lowConfidencePages: number;
+  averageConfidence: number | null;
+  perDocument: Array<{
+    documentId: string;
+    documentName: string;
+    pageCount: number;
+    nativeTextPages: number;
+    ocrPages: number;
+    failedPages: number;
+    lowConfidencePages: number;
+    averageConfidence: number | null;
+    ocrEngine: string;
+    warnings: string[];
+    needsReview: boolean;
+  }>;
+  needsReviewCount: number;
+  generatedAt: string;
 };
 
 type DirectoryScanCandidate = {
@@ -334,7 +367,7 @@ type DesktopDataDirectoryPickResult = {
   status?: DesktopDataDirectoryStatus;
 };
 
-type VectorForgeDesktopApi = {
+type KnowledgeForgeDesktopApi = {
   getLocalActionToken: () => Promise<{ token: string }>;
   getDataDirectoryStatus: () => Promise<DesktopDataDirectoryStatus>;
   chooseDataDirectory: () => Promise<DesktopDataDirectoryPickResult>;
@@ -345,7 +378,7 @@ type VectorForgeDesktopApi = {
 
 declare global {
   interface Window {
-    vectorForgeDesktop?: VectorForgeDesktopApi;
+    KnowledgeForgeDesktop?: KnowledgeForgeDesktopApi;
   }
 }
 
@@ -518,15 +551,15 @@ type PendingProcessingAction = {
   documentIds?: string[];
 };
 
-const supportedFormats = ".txt,.md,.markdown,.json,.html,.htm,.csv,.tsv,.xml,.log,.yaml,.yml,.pdf,.docx,.png,.jpg,.jpeg,.webp,.tif,.tiff,.bmp";
+const supportedFormats = ".txt,.md,.markdown,.json,.html,.htm,.csv,.tsv,.xml,.log,.yaml,.yml,.pdf,.docx,.pptx,.xlsx,.xls,.png,.jpg,.jpeg,.webp,.tif,.tiff,.bmp";
 const mcpResourceCatalog = [
-  { uri: "vectorforge://health", label: "Health", description: "API 健康、版本、LanceDB 和脱敏配置摘要。" },
-  { uri: "vectorforge://collections", label: "Collections", description: "本地知识库列表。" },
-  { uri: "vectorforge://collections/{slug}/documents", label: "Collection Documents", description: "指定知识库文档列表，使用实际 slug 替换占位符。" },
-  { uri: "vectorforge://embedding-provider/status", label: "Embedding Status", description: "当前 embedding provider 与各知识库索引兼容状态。" },
-  { uri: "vectorforge://jobs/recent", label: "Recent Jobs", description: "最近导入、OCR、embedding 和重处理任务。" },
-  { uri: "vectorforge://anythingllm/sync-status", label: "AnythingLLM Sync", description: "本地记录的 AnythingLLM 同步状态，不主动访问远端。" },
-  { uri: "vectorforge://documents/quality", label: "Document Quality", description: "OCR/解析质量、失败、警告和低置信度概览。" },
+  { uri: "KnowledgeForge://health", label: "Health", description: "API 健康、版本、LanceDB 和脱敏配置摘要。" },
+  { uri: "KnowledgeForge://collections", label: "Collections", description: "本地知识库列表。" },
+  { uri: "KnowledgeForge://collections/{slug}/documents", label: "Collection Documents", description: "指定知识库文档列表，使用实际 slug 替换占位符。" },
+  { uri: "KnowledgeForge://embedding-provider/status", label: "Embedding Status", description: "当前 embedding provider 与各知识库索引兼容状态。" },
+  { uri: "KnowledgeForge://jobs/recent", label: "Recent Jobs", description: "最近导入、OCR、embedding 和重处理任务。" },
+  { uri: "KnowledgeForge://anythingllm/sync-status", label: "AnythingLLM Sync", description: "本地记录的 AnythingLLM 同步状态，不主动访问远端。" },
+  { uri: "KnowledgeForge://documents/quality", label: "Document Quality", description: "OCR/解析质量、失败、警告和低置信度概览。" },
 ];
 
 const parserLabel: Record<string, string> = {
@@ -673,6 +706,18 @@ function App() {
   const [topK, setTopK] = React.useState(8);
   const [searchResults, setSearchResults] = React.useState<SearchResult[]>([]);
   const [hasSearched, setHasSearched] = React.useState(false);
+
+  const [filterFileType, setFilterFileType] = React.useState("");
+  const [filterDateFrom, setFilterDateFrom] = React.useState("");
+  const [filterDateTo, setFilterDateTo] = React.useState("");
+  const [filterMinConfidence, setFilterMinConfidence] = React.useState(0);
+  const [filterOcrStatus, setFilterOcrStatus] = React.useState("all");
+  const [showFilters, setShowFilters] = React.useState(false);
+  const [qualityReport, setQualityReport] = React.useState<OcrQualityReport | null>(null);
+  const [showQualityReport, setShowQualityReport] = React.useState(false);
+  const [showArchived, setShowArchived] = React.useState(false);
+  const [docSort, setDocSort] = React.useState("newest");
+  const [collectionTags, setCollectionTags] = React.useState<string[]>([]);
   const [aiInput, setAiInput] = React.useState("");
   const [aiFiles, setAiFiles] = React.useState<File[]>([]);
   const [aiMessages, setAiMessages] = React.useState<AiMessage[]>([
@@ -824,10 +869,10 @@ function App() {
   }, [applyOnboardingPayload]);
 
   const refreshDesktopDataDirectory = React.useCallback(async (quiet = true) => {
-    if (!window.vectorForgeDesktop) return null;
+    if (!window.KnowledgeForgeDesktop) return null;
     setBusy((current) => current ?? "data-dir-status");
     try {
-      const status = await window.vectorForgeDesktop.getDataDirectoryStatus();
+      const status = await window.KnowledgeForgeDesktop.getDataDirectoryStatus();
       setDesktopDataDir(status);
       setDesktopDataDirDraft(status.selectedDataDir || status.activeDataDir || status.defaultDataDir || "");
       return status;
@@ -960,7 +1005,7 @@ function App() {
   }, [refreshAll]);
 
   React.useEffect(() => {
-    if (!window.vectorForgeDesktop) return;
+    if (!window.KnowledgeForgeDesktop) return;
     void refreshDesktopDataDirectory(true);
   }, [refreshDesktopDataDirectory]);
 
@@ -1040,13 +1085,13 @@ function App() {
   }
 
   async function chooseDesktopDataDirectory() {
-    if (!window.vectorForgeDesktop || busy) return;
+    if (!window.KnowledgeForgeDesktop || busy) return;
     setBusy("data-dir-pick");
     try {
-      const result = await window.vectorForgeDesktop.chooseDataDirectory();
+      const result = await window.KnowledgeForgeDesktop.chooseDataDirectory();
       if (result.status) setDesktopDataDir(result.status);
       if (!result.canceled && result.path) setDesktopDataDirDraft(result.path);
-      if (result.reason === "env-override") showToast("info", "当前由 VECTOR_FORGE_DATA_DIR 指定数据目录，桌面设置已锁定。");
+      if (result.reason === "env-override") showToast("info", "当前由 KNOWLEDGE_FORGE_DATA_DIR 指定数据目录，桌面设置已锁定。");
     } catch (error) {
       showToast("error", errorMessage(error));
     } finally {
@@ -1055,11 +1100,11 @@ function App() {
   }
 
   async function saveDesktopDataDirectory() {
-    if (!window.vectorForgeDesktop || busy) return;
+    if (!window.KnowledgeForgeDesktop || busy) return;
     if (!desktopDataDirDraft.trim()) return showToast("error", "请输入要保存的数据目录。");
     setBusy("data-dir-save");
     try {
-      const status = await window.vectorForgeDesktop.saveDataDirectory(desktopDataDirDraft.trim());
+      const status = await window.KnowledgeForgeDesktop.saveDataDirectory(desktopDataDirDraft.trim());
       setDesktopDataDir(status);
       setDesktopDataDirDraft(status.selectedDataDir || status.activeDataDir || "");
       showToast(status.pendingRelaunch ? "info" : "success", status.pendingRelaunch ? "数据目录已保存，重启应用后生效。" : "数据目录已保存。");
@@ -1071,10 +1116,10 @@ function App() {
   }
 
   async function resetDesktopDataDirectory() {
-    if (!window.vectorForgeDesktop || busy) return;
+    if (!window.KnowledgeForgeDesktop || busy) return;
     setBusy("data-dir-reset");
     try {
-      const status = await window.vectorForgeDesktop.resetDataDirectory();
+      const status = await window.KnowledgeForgeDesktop.resetDataDirectory();
       setDesktopDataDir(status);
       setDesktopDataDirDraft(status.selectedDataDir || status.defaultDataDir || "");
       showToast(status.pendingRelaunch ? "info" : "success", status.pendingRelaunch ? "已恢复默认目录，重启应用后生效。" : "已恢复默认目录。");
@@ -1086,10 +1131,10 @@ function App() {
   }
 
   async function relaunchDesktopApp() {
-    if (!window.vectorForgeDesktop || busy) return;
+    if (!window.KnowledgeForgeDesktop || busy) return;
     setBusy("desktop-relaunch");
     try {
-      const result = await window.vectorForgeDesktop.relaunch();
+      const result = await window.KnowledgeForgeDesktop.relaunch();
       if (result.dryRun) {
         setBusy(null);
         showToast("info", "Desktop relaunch dry-run completed.");
@@ -1101,7 +1146,7 @@ function App() {
   }
 
   function requestDesktopRelaunch() {
-    if (!window.vectorForgeDesktop || busy) return;
+    if (!window.KnowledgeForgeDesktop || busy) return;
     setPendingDesktopRelaunch(true);
   }
 
@@ -1570,6 +1615,7 @@ function App() {
       return false;
     }
     setBusy("document-detail");
+    void loadCollectionTags();
     try {
       const detailPayload = await api<DocumentDetailPayload>(`/api/collections/${encodeURIComponent(activeCollection.slug)}/documents/${encodeURIComponent(documentId)}`);
       setDocumentDetail(detailPayload);
@@ -1715,6 +1761,64 @@ function App() {
     showToast(ok ? "success" : "error", ok ? "MCP resource URI 已复制。" : "复制失败，请手动复制 URI。");
   }
 
+  async function archiveDocument(documentId: string) {
+    if (!activeCollection) return;
+    try {
+      await api(`/api/documents/${encodeURIComponent(documentId)}/archive?collectionSlug=${encodeURIComponent(activeCollection.slug)}`, { method: "POST" });
+      showToast("success", "???");
+      if (activeSlug) void loadCollectionBundle(activeSlug);
+    } catch (e) { showToast("error", errorMessage(e)); }
+  }
+
+  async function restoreDocument(documentId: string) {
+    if (!activeCollection) return;
+    try {
+      await api(`/api/documents/${encodeURIComponent(documentId)}/restore?collectionSlug=${encodeURIComponent(activeCollection.slug)}`, { method: "POST" });
+      showToast("success", "???");
+      if (activeSlug) void loadCollectionBundle(activeSlug);
+    } catch (e) { showToast("error", errorMessage(e)); }
+  }
+
+  async function saveDocumentMetadata(documentId: string, updates: { notes?: string; tags?: string[] }) {
+    try {
+      const updated = await api<DocumentRecord>(`/api/documents/${encodeURIComponent(documentId)}/metadata?collectionSlug=${encodeURIComponent(activeCollection?.slug || "")}`, {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      });
+      // Update local documents state
+      setDocumentDetail((prev) => prev ? { ...prev, document: { ...prev.document, notes: updated.notes, tags: updated.tags } } : prev);
+      showToast("success", "???");
+      return updated;
+    } catch (error) {
+      showToast("error", errorMessage(error));
+      return null;
+    }
+  }
+
+  async function loadCollectionTags() {
+    if (!activeCollection) return;
+    try {
+      const payload = await api<{ tags: string[] }>(`/api/collections/${encodeURIComponent(activeCollection.slug)}/tags`);
+      setCollectionTags(payload.tags);
+    } catch {
+      // Silently fail - tags are optional
+    }
+  }
+
+  async function fetchQualityReport() {
+    if (!activeCollection || busy) return;
+    setBusy("document-detail");
+    try {
+      const report = await api<OcrQualityReport>(`/api/collections/${encodeURIComponent(activeCollection.slug)}/quality-report`);
+      setQualityReport(report);
+      setShowQualityReport(true);
+    } catch (error) {
+      showToast("error", errorMessage(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function runSearchForQuery(query: string, options: { revealResults?: boolean } = {}) {
     if (busy) return null;
     if (!activeCollection) return showToast("error", "请先选择知识库。");
@@ -1723,7 +1827,15 @@ function App() {
     try {
       const payload = await api<{ results: SearchResult[] }>(`/api/collections/${encodeURIComponent(activeCollection.slug)}/search`, {
         method: "POST",
-        body: JSON.stringify({ query: query.trim(), topK }),
+        body: JSON.stringify({
+            query: query.trim(),
+            topK,
+            ...(filterFileType && { fileType: filterFileType }),
+            ...(filterDateFrom && { dateFrom: filterDateFrom }),
+            ...(filterDateTo && { dateTo: filterDateTo }),
+            ...(filterMinConfidence > 0 && { minConfidence: filterMinConfidence }),
+            ...(filterOcrStatus !== "all" && { ocrStatus: filterOcrStatus }),
+          }),
       });
       setSearchResults(payload.results);
       setHasSearched(true);
@@ -2498,7 +2610,9 @@ function App() {
       : null;
 
   return (
-    <main className="forge-shell">
+    <>
+      {busy ? <div className="global-loading-bar" /> : null}
+      <main className="forge-shell">
       <Sidebar
         health={health}
         onboardingPayload={onboardingPayload}
@@ -2607,12 +2721,43 @@ function App() {
                 setActiveSection("documents");
                 void openDocumentDetail(documentId);
               }}
+              showFilters={showFilters}
+              filterFileType={filterFileType}
+              filterDateFrom={filterDateFrom}
+              filterDateTo={filterDateTo}
+              filterMinConfidence={filterMinConfidence}
+              filterOcrStatus={filterOcrStatus}
+              onToggleFilters={() => setShowFilters((v) => !v)}
+              onFilterFileType={setFilterFileType}
+              onFilterDateFrom={setFilterDateFrom}
+              onFilterDateTo={setFilterDateTo}
+              onFilterMinConfidence={setFilterMinConfidence}
+              onFilterOcrStatus={setFilterOcrStatus}
+              onClearFilters={() => {
+                setFilterFileType("");
+                setFilterDateFrom("");
+                setFilterDateTo("");
+                setFilterMinConfidence(0);
+                setFilterOcrStatus("all");
+                setShowFilters(false);
+              }}
             />
             )}
             {activeSection === "documents" && (
               <>
             <DocumentsPanel
-              documents={documents}
+              documents={(showArchived ? documents : documents.filter((d) => !d.archived)).sort((a, b) => {
+    if (docSort === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (docSort === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (docSort === "name-asc") return a.name.localeCompare(b.name);
+    if (docSort === "name-desc") return b.name.localeCompare(a.name);
+    return 0;
+  })}
+              onQualityReport={() => void fetchQualityReport()}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived((v) => !v)}
+              docSort={docSort}
+              onSortChange={setDocSort}
               busy={busy}
               canImport={Boolean(activeCollection)}
               directoryPath={directoryPath}
@@ -2650,6 +2795,11 @@ function App() {
               onDelete={requestDeleteDocument}
               onReprocess={(documentId) => void reprocessDocument(documentId)}
               onRetryAnythingCleanup={requestAnythingCleanup}
+              onSaveNotes={(documentId, notes) => { void saveDocumentMetadata(documentId, { notes }); }}
+              onSaveTags={(documentId, tags) => { void saveDocumentMetadata(documentId, { tags }); }}
+              collectionTags={collectionTags}
+              onArchive={(id) => { void archiveDocument(id); }}
+              onRestore={(id) => { void restoreDocument(id); }}
             />
               </>
             )}
@@ -2859,7 +3009,60 @@ function App() {
         onConfirm={() => void confirmPendingProcessingAction()}
       />
       {toast && <ToastView toast={toast} />}
-    </main>
+      {showQualityReport && qualityReport && (
+        <div className="modal-overlay" onClick={() => setShowQualityReport(false)}>
+          <div className="modal-content" style={{ maxWidth: 720, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0 }}>OCR ????</h2>
+              <button className="button" onClick={() => setShowQualityReport(false)}><X size={18} /></button>
+            </div>
+            <div className="metric-grid" style={{ marginBottom: 16 }}>
+              <MetricCard color="#2563eb" label="???" value={String(qualityReport.totalDocuments)} caption={`${qualityReport.ocrDocuments} OCR + ${qualityReport.nativeTextDocuments} ??`} />
+              <MetricCard color="#7c3aed" label="???" value={String(qualityReport.totalPages)} caption={`${qualityReport.ocrPages} OCR / ${qualityReport.nativeTextPages} ??`} />
+              <MetricCard color={qualityReport.averageConfidence && qualityReport.averageConfidence >= 70 ? "#16a34a" : "#dc2626"} label="?????" value={qualityReport.averageConfidence ? `${qualityReport.averageConfidence.toFixed(1)}%` : "N/A"} caption={qualityReport.lowConfidencePages > 0 ? `${qualityReport.lowConfidencePages} ?????` : "????"} />
+              <MetricCard color={qualityReport.needsReviewCount > 0 ? "#ea580c" : "#16a34a"} label="?????" value={String(qualityReport.needsReviewCount)} caption={qualityReport.needsReviewCount > 0 ? "???????" : "??????"} />
+            </div>
+            {qualityReport.failedPages > 0 && (
+              <div className="pill warn" style={{ marginBottom: 12 }}>? {qualityReport.failedPages} ?????</div>
+            )}
+            <div style={{ maxHeight: 360, overflow: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #e2e8f0", textAlign: "left" }}>
+                    <th style={{ padding: "8px 12px", fontSize: "0.8rem", color: "#5a6988" }}>??</th>
+                    <th style={{ padding: "8px 12px", fontSize: "0.8rem", color: "#5a6988" }}>??</th>
+                    <th style={{ padding: "8px 12px", fontSize: "0.8rem", color: "#5a6988" }}>???</th>
+                    <th style={{ padding: "8px 12px", fontSize: "0.8rem", color: "#5a6988" }}>??</th>
+                    <th style={{ padding: "8px 12px", fontSize: "0.8rem", color: "#5a6988" }}>??</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {qualityReport.perDocument.map((doc) => (
+                    <tr key={doc.documentId} style={{ borderBottom: "1px solid #e2e8f0", background: doc.needsReview ? "#fffbeb" : "transparent" }}>
+                      <td style={{ padding: "8px 12px", fontSize: "0.82rem", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={doc.documentName}>{doc.documentName}</td>
+                      <td style={{ padding: "8px 12px", fontSize: "0.82rem" }}>{doc.pageCount} <span style={{ color: "#8499b8", fontSize: "0.72rem" }}>({doc.ocrPages} OCR)</span></td>
+                      <td style={{ padding: "8px 12px", fontSize: "0.82rem" }}>
+                        {doc.averageConfidence !== null ? (
+                          <span style={{ color: doc.averageConfidence >= 70 ? "#16a34a" : doc.averageConfidence >= 50 ? "#ea580c" : "#dc2626" }}>{doc.averageConfidence.toFixed(0)}%</span>
+                        ) : "-"}
+                      </td>
+                      <td style={{ padding: "8px 12px", fontSize: "0.78rem", color: "#5a6988" }}>{doc.ocrEngine}</td>
+                      <td style={{ padding: "8px 12px" }}>
+                        {doc.needsReview ? <span className="pill warn">???</span> : <span className="pill good">??</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ marginTop: 12, fontSize: "0.75rem", color: "#8499b8" }}>
+              ????: {new Date(qualityReport.generatedAt).toLocaleString("zh-CN")}
+            </div>
+          </div>
+        </div>
+      )}
+      </main>
+  </>
   );
 }
 
@@ -3282,6 +3485,19 @@ function SearchPanel(props: {
   onSearch: () => void;
   onCopyCitation: () => void;
   onOpenDocument: (documentId: string) => void;
+  showFilters: boolean;
+  filterFileType: string;
+  filterDateFrom: string;
+  filterDateTo: string;
+  filterMinConfidence: number;
+  filterOcrStatus: string;
+  onToggleFilters: () => void;
+  onFilterFileType: (value: string) => void;
+  onFilterDateFrom: (value: string) => void;
+  onFilterDateTo: (value: string) => void;
+  onFilterMinConfidence: (value: number) => void;
+  onFilterOcrStatus: (value: string) => void;
+  onClearFilters: () => void;
 }) {
   const visibleResults = props.results.length ? props.results : [];
   return (
@@ -3344,6 +3560,10 @@ function DocumentsPanel({
   onOpenDocument,
   onDeleteDocument,
   onReprocessDocument,
+  showArchived,
+  onToggleArchived,
+  docSort,
+  onSortChange,
 }: {
   documents: DocumentRecord[];
   busy: BusyState;
@@ -3362,6 +3582,11 @@ function DocumentsPanel({
   onOpenDocument: (documentId: string) => void;
   onDeleteDocument: (document: DocumentRecord) => void;
   onReprocessDocument: (documentId: string) => void;
+  onQualityReport: () => void;
+  showArchived: boolean;
+  onToggleArchived: () => void;
+  docSort: string;
+  onSortChange: (value: string) => void;
 }) {
   const [showAllDocuments, setShowAllDocuments] = React.useState(false);
   const [showAllDirectoryCandidates, setShowAllDirectoryCandidates] = React.useState(false);
@@ -3553,6 +3778,27 @@ function DocumentsPanel({
               {showAllDocuments ? "收起文档" : `显示全部 ${documents.length} 条`}
             </button>
           )}
+          <select value={docSort} onChange={(e) => onSortChange(e.target.value)} style={{ fontSize: "0.75rem", padding: "4px 8px", border: "1px solid #d6deea", borderRadius: 6, background: "#fff", marginRight: 6 }}>
+            <option value="newest">??</option>
+            <option value="oldest">??</option>
+            <option value="name-asc">A-Z</option>
+            <option value="name-desc">Z-A</option>
+          </select>
+          <button className="mini-action" type="button" onClick={() => onToggleArchived()} disabled={Boolean(busy)}>
+            {showArchived ? "?????" : "?????"}
+          </button>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.78rem", color: "#5a6988", minWidth: 60 }}>{selectedIds.length > 0 ? `?? ${selectedIds.length}` : "???"}</span>
+            <button className="mini-action" type="button" onClick={() => {
+              const all = documents.filter((d) => !d.archived).map((d) => d.id);
+              setSelectedIds(all);
+            }} disabled={Boolean(busy)}>??</button>
+            <button className="mini-action" type="button" onClick={() => setSelectedIds([])} disabled={Boolean(busy)}>????</button>
+            <button className="mini-action" type="button" onClick={() => {
+              const failed = documents.filter((d) => d.status === "failed" && !d.archived).map((d) => d.id);
+              setSelectedIds(failed);
+            }} disabled={Boolean(busy)}>???</button>
+          </div>
           <button className="button secondary" onClick={() => void runBatchReprocess()} disabled={batchDisabled}>
             {busy === "batch-reprocess" ? <Loader2 className="spin" size={15} /> : <RotateCcw size={15} />}
             批量重处理
@@ -3638,6 +3884,11 @@ function DocumentDetailPanel({
   onDelete,
   onReprocess,
   onRetryAnythingCleanup,
+  onSaveNotes,
+  onSaveTags,
+  onArchive,
+  onRestore,
+  collectionTags,
 }: {
   detail: DocumentDetailPayload | null;
   text: DocumentTextPayload | null;
@@ -3647,6 +3898,11 @@ function DocumentDetailPanel({
   onDelete: (document: DocumentRecord) => void;
   onReprocess: (documentId: string) => void;
   onRetryAnythingCleanup: (document: DocumentRecord) => void;
+  onSaveNotes: (documentId: string, notes: string) => void;
+  onSaveTags: (documentId: string, tags: string[]) => void;
+  collectionTags: string[];
+  onArchive: (documentId: string) => void;
+  onRestore: (documentId: string) => void;
 }) {
   if (!detail) return null;
   const document = detail.document;
@@ -3685,6 +3941,15 @@ function DocumentDetailPanel({
         <button className="mini-action danger" type="button" onClick={() => onDelete(document)} disabled={Boolean(busy)}>
           {busy === "document-delete" ? <Loader2 className="spin" size={14} /> : <Trash2 size={14} />}
           删除文档
+        {document.archived ? (
+          <button className="mini-action" type="button" onClick={() => onRestore(document.id)} disabled={Boolean(busy)}>
+            <RotateCcw size={14} /> ??
+          </button>
+        ) : (
+          <button className="mini-action" type="button" onClick={() => onArchive(document.id)} disabled={Boolean(busy)}>
+            <Eye size={14} /> ??
+          </button>
+        )}
         </button>
       </div>
 
@@ -3695,6 +3960,60 @@ function DocumentDetailPanel({
         <DetailItem label="Chunks" value={String(document.chunkCount || detail.chunks.length)} />
         <DetailItem label="OCR" value={document.ocrEngine ? `${document.ocrEngine} / ${document.ocrLanguage || "-"}` : "-"} />
         <DetailItem label="置信度" value={typeof document.ocrConfidence === "number" ? `${Math.round(document.ocrConfidence)}%` : "-"} />
+      </div>
+
+      <div className="detail-section">
+        <div className="detail-section-title"><strong>??</strong></div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+          {(document.tags || []).map((tag) => (
+            <span key={tag} className="pill neutral" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              {tag}
+              <X size={12} onClick={() => {
+                const newTags = (document.tags || []).filter((t) => t !== tag);
+                onSaveTags(document.id, newTags);
+              }} style={{ cursor: "pointer" }} />
+            </span>
+          ))}
+          <input
+            style={{ width: 120, padding: "4px 8px", fontSize: "0.78rem", border: "1px dashed #c8d4e2" }}
+            placeholder="+ ????"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                const val = (e.target as HTMLInputElement).value.trim();
+                if (val && !(document.tags || []).includes(val)) {
+                  onSaveTags(document.id, [...(document.tags || []), val]);
+                }
+                (e.target as HTMLInputElement).value = "";
+              }
+            }}
+            list="tag-suggestions"
+          />
+          <datalist id="tag-suggestions">
+            {collectionTags.filter((t) => !(document.tags || []).includes(t)).map((t) => (
+              <option key={t} value={t} />
+            ))}
+          </datalist>
+        </div>
+      </div>
+
+      <div className="detail-section">
+        <div className="detail-section-title"><strong>??</strong></div>
+        <textarea
+          rows={3}
+          style={{ fontSize: "0.82rem", resize: "vertical" }}
+          placeholder="????..."
+          defaultValue={document.notes || ""}
+          onBlur={(e) => {
+            const val = e.target.value.trim();
+            if (val !== (document.notes || "")) {
+              onSaveNotes(document.id, val);
+            }
+          }}
+        />
+        <div style={{ fontSize: "0.7rem", color: "#8499b8", textAlign: "right" }}>
+          {(document.notes || "").length} / 2000
+        </div>
       </div>
 
       {document.error && (
@@ -4222,7 +4541,7 @@ function DesktopRelaunchConfirmDialog({
       <section className="confirm-dialog desktop-relaunch-dialog" role="dialog" aria-modal="true" aria-labelledby="desktop-relaunch-title" data-testid="desktop-relaunch-dialog">
         <div className="panel-heading">
           <div>
-            <h2 id="desktop-relaunch-title">Restart Vector Forge Desktop</h2>
+            <h2 id="desktop-relaunch-title">Restart Knowledge Forge</h2>
             <p>The app will close and relaunch so the pending data directory can take effect.</p>
           </div>
           <RefreshCw size={18} />
@@ -4324,7 +4643,7 @@ function DesktopActionConfirmDialog({
   const title = isLaunch ? "启动 AnythingLLM 安装器" : "打开安装器目录";
   const body = isLaunch
     ? "这会调用本机系统启动托管目录里最近下载的 AnythingLLM 安装器。请确认安装包来自官方 GitHub release。"
-    : "这会调用本机系统打开 Vector Forge 管理的 AnythingLLM 安装器目录。";
+    : "这会调用本机系统打开 Knowledge Forge 管理的 AnythingLLM 安装器目录。";
   const confirmLabel = isLaunch ? "确认启动" : "确认打开";
   const isBusy = busy === "anything-installer-launch" || busy === "anything-installer-folder";
   return (
@@ -4639,7 +4958,7 @@ function DataDirectoryControl({
   onReset: () => void;
   onRelaunch: () => void;
 }) {
-  if (!status && !window.vectorForgeDesktop) return null;
+  if (!status && !window.KnowledgeForgeDesktop) return null;
   const envLocked = Boolean(status?.envOverride);
   const pending = Boolean(status?.pendingRelaunch);
   const isBusy = Boolean(busy);
@@ -4663,7 +4982,7 @@ function DataDirectoryControl({
       </label>
       {envLocked && (
         <p className="inline-warning" data-testid="data-dir-env-lock">
-          当前由 VECTOR_FORGE_DATA_DIR 指定数据目录，桌面设置不可修改。
+          当前由 KNOWLEDGE_FORGE_DATA_DIR 指定数据目录，桌面设置不可修改。
         </p>
       )}
       {pending && (
@@ -4963,6 +5282,21 @@ function ConfigInspector(props: {
 
           {showEmbedding && (
           <ConfigCard color="blue" title="Embedding" meta={`${config.embedding.model} · ${config.embedding.dimension} 维`} icon={<Bot size={16} />} id="section-embedding">
+            <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.75rem", color: "#8499b8", alignSelf: "center" }}>??:</span>
+              <button className="mini-action" type="button" onClick={() => props.onPatch((draft) => ({
+                ...draft,
+                embedding: { ...draft.embedding, provider: "local-hash", model: "local-hash", dimension: 768, baseUrl: "", apiKey: "", batchSize: 16 }
+              }))} title="???? 768 ?">local-hash</button>
+              <button className="mini-action" type="button" onClick={() => props.onPatch((draft) => ({
+                ...draft,
+                embedding: { ...draft.embedding, provider: "openai-compatible", model: "text-embedding-3-small", dimension: 1536, baseUrl: "https://api.openai.com/v1/embeddings", batchSize: 32 }
+              }))} title="OpenAI small ? 1536 ?">OpenAI small</button>
+              <button className="mini-action" type="button" onClick={() => props.onPatch((draft) => ({
+                ...draft,
+                embedding: { ...draft.embedding, provider: "openai-compatible", model: "text-embedding-3-large", dimension: 3072, baseUrl: "https://api.openai.com/v1/embeddings", batchSize: 16 }
+              }))} title="OpenAI large ? 3072 ?">OpenAI large</button>
+            </div>
             <div className="two-col">
               <label className="field">
                 <span>Provider</span>
@@ -5294,7 +5628,10 @@ function TaskMini({ jobs, cancellingJobId, onCancelJob }: { jobs: ProcessingJob[
       {active ? (
         <>
           <p>{active.fileName} · {phaseLabel(active.phase)}</p>
-          <div className="progress-track"><span style={{ width: `${Math.round(progress * 100)}%` }} /></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="progress-track" style={{ flex: 1 }}><span style={{ width: `${Math.round(progress * 100)}%` }} /></div>
+            <span style={{ fontSize: "0.75rem", color: "#5a6988", minWidth: 36, textAlign: "right" }}>{Math.round(progress * 100)}%</span>
+          </div>
           <small>{active.error || active.message || "等待处理"}</small>
           <div className="recent-job-list">
             {jobs.slice(0, 4).map((job) => (
@@ -5368,9 +5705,9 @@ function needsLocalActionToken(url: string) {
 }
 
 async function localActionHeaders(url: string): Promise<Record<string, string>> {
-  if (!needsLocalActionToken(url) || !window.vectorForgeDesktop?.getLocalActionToken) return {};
-  const { token } = await window.vectorForgeDesktop.getLocalActionToken();
-  return token ? { "X-Vector-Forge-Local-Action-Token": token } : {};
+  if (!needsLocalActionToken(url) || !window.KnowledgeForgeDesktop?.getLocalActionToken) return {};
+  const { token } = await window.KnowledgeForgeDesktop.getLocalActionToken();
+  return token ? { "X-knowledge-forge-Local-Action-Token": token } : {};
 }
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -5473,9 +5810,9 @@ function errorMessage(error: unknown) {
 }
 
 const rootElement = document.getElementById("root")!;
-const rootHolder = globalThis as typeof globalThis & { __vectorForgeRoot?: ReturnType<typeof createRoot> };
-const root = rootHolder.__vectorForgeRoot ?? createRoot(rootElement);
-rootHolder.__vectorForgeRoot = root;
+const rootHolder = globalThis as typeof globalThis & { __KnowledgeForgeRoot?: ReturnType<typeof createRoot> };
+const root = rootHolder.__KnowledgeForgeRoot ?? createRoot(rootElement);
+rootHolder.__KnowledgeForgeRoot = root;
 
 root.render(
   <React.StrictMode>

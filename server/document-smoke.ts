@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+﻿import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -6,7 +6,7 @@ import JSZip from "jszip";
 import PDFDocument from "pdfkit";
 
 const rootDir = process.cwd();
-const tempDir = await mkdtemp(path.join(os.tmpdir(), "vector-forge-documents-smoke-"));
+const tempDir = await mkdtemp(path.join(os.tmpdir(), "knowledge-forge-documents-smoke-"));
 const port = 61985;
 const tsxCli = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
 
@@ -108,9 +108,9 @@ const server = spawn(process.execPath, [tsxCli, "server/index.ts"], {
   cwd: rootDir,
   env: {
     ...process.env,
-    VECTOR_FORGE_ROOT_DIR: rootDir,
-    VECTOR_FORGE_DATA_DIR: tempDir,
-    VECTOR_FORGE_PORT: String(port),
+    KNOWLEDGE_FORGE_ROOT_DIR: rootDir,
+    KNOWLEDGE_FORGE_DATA_DIR: tempDir,
+    KNOWLEDGE_FORGE_PORT: String(port),
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -123,14 +123,23 @@ try {
   });
   assert(created.collection.slug === "documents-smoke", "Collection was not created with expected slug.");
 
+async function createXlsx(text: string) {
+  const XLSX = await import("xlsx");
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([["Product", "Price", "Sentinel"], ["Alpha", 100, text], ["Beta", 200, "data row"]]);
+  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+  return Buffer.from(XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
+}
+
   const samples = [
-    { name: "format.txt", type: "text/plain", body: Buffer.from("VECTOR_FORGE_FORMAT_TXT_SENTINEL plain text document", "utf8"), query: "VECTOR_FORGE_FORMAT_TXT_SENTINEL" },
-    { name: "format.md", type: "text/markdown", body: Buffer.from("# Markdown\n\nVECTOR_FORGE_FORMAT_MD_SENTINEL markdown document", "utf8"), query: "VECTOR_FORGE_FORMAT_MD_SENTINEL" },
-    { name: "format.html", type: "text/html", body: Buffer.from("<style>.x{}</style><script>ignore()</script><main>VECTOR_FORGE_FORMAT_HTML_SENTINEL html document</main>", "utf8"), query: "VECTOR_FORGE_FORMAT_HTML_SENTINEL" },
-    { name: "format.json", type: "application/json", body: Buffer.from(JSON.stringify({ nested: { sentinel: "VECTOR_FORGE_FORMAT_JSON_SENTINEL" } }), "utf8"), query: "VECTOR_FORGE_FORMAT_JSON_SENTINEL" },
-    { name: "format.csv", type: "text/csv", body: Buffer.from("kind,value\ncsv,VECTOR_FORGE_FORMAT_CSV_SENTINEL\n", "utf8"), query: "VECTOR_FORGE_FORMAT_CSV_SENTINEL" },
-    { name: "format.pdf", type: "application/pdf", body: await createPdf("VECTOR FORGE FORMAT PDF SENTINEL copyable text PDF"), query: "VECTOR FORGE FORMAT PDF SENTINEL" },
-    { name: "format.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", body: await createDocx("VECTOR_FORGE_FORMAT_DOCX_SENTINEL docx document"), query: "VECTOR_FORGE_FORMAT_DOCX_SENTINEL" },
+    { name: "format.txt", type: "text/plain", body: Buffer.from("KNOWLEDGE_FORGE_FORMAT_TXT_SENTINEL plain text document", "utf8"), query: "KNOWLEDGE_FORGE_FORMAT_TXT_SENTINEL" },
+    { name: "format.md", type: "text/markdown", body: Buffer.from("# Markdown\n\nKNOWLEDGE_FORGE_FORMAT_MD_SENTINEL markdown document", "utf8"), query: "KNOWLEDGE_FORGE_FORMAT_MD_SENTINEL" },
+    { name: "format.html", type: "text/html", body: Buffer.from("<style>.x{}</style><script>ignore()</script><main>KNOWLEDGE_FORGE_FORMAT_HTML_SENTINEL html document</main>", "utf8"), query: "KNOWLEDGE_FORGE_FORMAT_HTML_SENTINEL" },
+    { name: "format.json", type: "application/json", body: Buffer.from(JSON.stringify({ nested: { sentinel: "KNOWLEDGE_FORGE_FORMAT_JSON_SENTINEL" } }), "utf8"), query: "KNOWLEDGE_FORGE_FORMAT_JSON_SENTINEL" },
+    { name: "format.csv", type: "text/csv", body: Buffer.from("kind,value\ncsv,KNOWLEDGE_FORGE_FORMAT_CSV_SENTINEL\n", "utf8"), query: "KNOWLEDGE_FORGE_FORMAT_CSV_SENTINEL" },
+    { name: "format.pdf", type: "application/pdf", body: await createPdf("Knowledge Forge FORMAT PDF SENTINEL copyable text PDF"), query: "Knowledge Forge FORMAT PDF SENTINEL" },
+    { name: "format.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", body: await createDocx("KNOWLEDGE_FORGE_FORMAT_DOCX_SENTINEL docx document"), query: "KNOWLEDGE_FORGE_FORMAT_DOCX_SENTINEL" },
+    { name: "format.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", body: await createXlsx("KNOWLEDGE_FORGE_FORMAT_XLSX_SENTINEL"), query: "KNOWLEDGE_FORGE_FORMAT_XLSX_SENTINEL" },
   ];
 
   const form = new FormData();

@@ -1,5 +1,5 @@
-{
-  "name": "vector-forge-lab",
+﻿{
+  "name": "knowledge-forge",
   "private": true,
   "version": "0.3.1",
   "description": "Local knowledge base, vector search, OCR, MCP, and optional AnythingLLM desktop integration.",
@@ -15,7 +15,7 @@
     "electron",
     "desktop-ai"
   ],
-  "author": "Vector Forge",
+  "author": "Knowledge Forge",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -62,8 +62,8 @@
     "preview": "vite preview --host 127.0.0.1 --port 5185"
   },
   "build": {
-    "appId": "com.vectorforge.desktop",
-    "productName": "Vector Forge Desktop",
+    "appId": "com.KnowledgeForge.desktop",
+    "productName": "Knowledge Forge",
     "asar": false,
     "electronDist": "./node_modules/electron/dist",
     "directories": {
@@ -134,6 +134,7 @@
     "multer": "^2.2.0",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^6.0.227",
+    "pptx2json": "^0.0.10",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "tesseract.js": "^7.0.0",
@@ -141,6 +142,7 @@
     "typescript": "~6.0.2",
     "uuid": "^14.0.1",
     "vite": "^8.0.12",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

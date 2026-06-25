@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
+﻿const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const nodeCrypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -6,7 +6,7 @@ const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
 function isSmokeMode() {
-  return process.env.VECTOR_FORGE_UI_SMOKE === "1" || process.env.VECTOR_FORGE_DESKTOP_SMOKE === "1" || process.env.VECTOR_FORGE_DATA_DIR_SMOKE === "1";
+  return process.env.KNOWLEDGE_FORGE_UI_SMOKE === "1" || process.env.KNOWLEDGE_FORGE_DESKTOP_SMOKE === "1" || process.env.KNOWLEDGE_FORGE_DATA_DIR_SMOKE === "1";
 }
 
 if (isSmokeMode()) {
@@ -20,8 +20,8 @@ if (isSmokeMode()) {
   app.commandLine.appendSwitch("no-sandbox");
 }
 
-if (process.env.VECTOR_FORGE_USER_DATA_DIR) {
-  app.setPath("userData", path.resolve(process.env.VECTOR_FORGE_USER_DATA_DIR));
+if (process.env.KNOWLEDGE_FORGE_USER_DATA_DIR) {
+  app.setPath("userData", path.resolve(process.env.KNOWLEDGE_FORGE_USER_DATA_DIR));
 }
 
 let apiServer = null;
@@ -29,7 +29,7 @@ let mainWindow = null;
 let appUrl = "";
 let activeDataDir = "";
 let dataDirSmokeRelaunchRequests = 0;
-const initialEnvDataDir = process.env.VECTOR_FORGE_DATA_DIR ? path.resolve(process.env.VECTOR_FORGE_DATA_DIR) : "";
+const initialEnvDataDir = process.env.KNOWLEDGE_FORGE_DATA_DIR ? path.resolve(process.env.KNOWLEDGE_FORGE_DATA_DIR) : "";
 const localActionToken = nodeCrypto.randomBytes(32).toString("hex");
 const allowedExternalHosts = new Set([
   "github.com",
@@ -76,7 +76,7 @@ function defaultDataDir() {
 }
 
 function smokeDataDirPickerDir() {
-  const configured = normalizeDataDir(process.env.VECTOR_FORGE_DATA_DIR_PICKER_RESULT || "");
+  const configured = normalizeDataDir(process.env.KNOWLEDGE_FORGE_DATA_DIR_PICKER_RESULT || "");
   return configured || path.join(app.getPath("userData"), "picked-data-root");
 }
 
@@ -155,11 +155,11 @@ async function startLocalApi() {
   const dataDir = resolveConfiguredDataDir();
   activeDataDir = dataDir;
 
-  process.env.VECTOR_FORGE_ROOT_DIR = appRoot;
-  process.env.VECTOR_FORGE_STATIC_DIR = staticDir;
-  process.env.VECTOR_FORGE_DATA_DIR = dataDir;
-  process.env.VECTOR_FORGE_DESKTOP = "1";
-  process.env.VECTOR_FORGE_LOCAL_ACTION_TOKEN = localActionToken;
+  process.env.KNOWLEDGE_FORGE_ROOT_DIR = appRoot;
+  process.env.KNOWLEDGE_FORGE_STATIC_DIR = staticDir;
+  process.env.KNOWLEDGE_FORGE_DATA_DIR = dataDir;
+  process.env.KNOWLEDGE_FORGE_DESKTOP = "1";
+  process.env.KNOWLEDGE_FORGE_LOCAL_ACTION_TOKEN = localActionToken;
 
   const serverModule = await import(pathToFileURL(serverEntry).href);
   apiServer = await serverModule.startServer(0, { silent: true });
@@ -246,7 +246,7 @@ function closeApiServer() {
 }
 
 function writeSmokeResult(payload) {
-  const resultPath = process.env.VECTOR_FORGE_DESKTOP_SMOKE_RESULT;
+  const resultPath = process.env.KNOWLEDGE_FORGE_DESKTOP_SMOKE_RESULT;
   if (!resultPath) return;
   fs.writeFileSync(resultPath, `${JSON.stringify(payload, null, 2)}\n`);
 }
@@ -254,7 +254,7 @@ function writeSmokeResult(payload) {
 function smokeJsonHeaders() {
   return {
     "Content-Type": "application/json",
-    "X-Vector-Forge-Local-Action-Token": localActionToken,
+    "X-knowledge-forge-Local-Action-Token": localActionToken,
   };
 }
 
@@ -273,24 +273,24 @@ function assertTrustedRenderer(event) {
 }
 
 function registerIpcHandlers() {
-  ipcMain.handle("vector-forge:get-local-action-token", (event) => {
+  ipcMain.handle("knowledge-forge:get-local-action-token", (event) => {
     assertTrustedRenderer(event);
     return { token: localActionToken };
   });
-  ipcMain.handle("vector-forge:get-data-dir-status", (event) => {
+  ipcMain.handle("knowledge-forge:get-data-dir-status", (event) => {
     assertTrustedRenderer(event);
     return desktopDataDirStatus();
   });
-  ipcMain.handle("vector-forge:choose-data-dir", async (event) => {
+  ipcMain.handle("knowledge-forge:choose-data-dir", async (event) => {
     assertTrustedRenderer(event);
     if (initialEnvDataDir) return { canceled: true, reason: "env-override", status: desktopDataDirStatus() };
-    if (process.env.VECTOR_FORGE_DATA_DIR_SMOKE === "1") {
+    if (process.env.KNOWLEDGE_FORGE_DATA_DIR_SMOKE === "1") {
       const pickedPath = smokeDataDirPickerDir();
       fs.mkdirSync(pickedPath, { recursive: true });
       return { canceled: false, path: pickedPath, status: desktopDataDirStatus(), smoke: true };
     }
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: "选择 Vector Forge 数据目录",
+      title: "选择 Knowledge Forge 数据目录",
       properties: ["openDirectory", "createDirectory"],
     });
     return {
@@ -299,23 +299,23 @@ function registerIpcHandlers() {
       status: desktopDataDirStatus(),
     };
   });
-  ipcMain.handle("vector-forge:save-data-dir", async (event, input) => {
+  ipcMain.handle("knowledge-forge:save-data-dir", async (event, input) => {
     assertTrustedRenderer(event);
-    if (initialEnvDataDir) throw new Error("VECTOR_FORGE_DATA_DIR is set. Desktop data directory changes are disabled.");
+    if (initialEnvDataDir) throw new Error("KNOWLEDGE_FORGE_DATA_DIR is set. Desktop data directory changes are disabled.");
     const dataDir = validateDataDir(input);
     fs.mkdirSync(dataDir, { recursive: true });
     saveDesktopSettings({ dataDir, updatedAt: new Date().toISOString() });
     return desktopDataDirStatus();
   });
-  ipcMain.handle("vector-forge:reset-data-dir", async (event) => {
+  ipcMain.handle("knowledge-forge:reset-data-dir", async (event) => {
     assertTrustedRenderer(event);
-    if (initialEnvDataDir) throw new Error("VECTOR_FORGE_DATA_DIR is set. Desktop data directory changes are disabled.");
+    if (initialEnvDataDir) throw new Error("KNOWLEDGE_FORGE_DATA_DIR is set. Desktop data directory changes are disabled.");
     saveDesktopSettings({ dataDir: "", updatedAt: new Date().toISOString() });
     return desktopDataDirStatus();
   });
-  ipcMain.handle("vector-forge:relaunch", async (event) => {
+  ipcMain.handle("knowledge-forge:relaunch", async (event) => {
     assertTrustedRenderer(event);
-    if (process.env.VECTOR_FORGE_DATA_DIR_SMOKE === "1") {
+    if (process.env.KNOWLEDGE_FORGE_DATA_DIR_SMOKE === "1") {
       dataDirSmokeRelaunchRequests += 1;
       return { relaunching: true, dryRun: true };
     }
@@ -342,22 +342,22 @@ async function runSmoke(url) {
 async function runDataDirSmoke(url) {
   const window = await createMainWindow(url, { show: false });
   await waitForWindowCondition(window, "document.body.innerText.includes('Knowledge Forge')", "app render");
-  await waitForWindowCondition(window, "Boolean(window.vectorForgeDesktop)", "desktop preload API");
+  await waitForWindowCondition(window, "Boolean(window.KnowledgeForgeDesktop)", "desktop preload API");
   await navigateSmokePage(window, "settings", "#section-settings");
   await waitForWindowCondition(window, "Boolean(document.querySelector('[data-testid=\"data-dir-input\"]'))", "desktop data directory input");
   if (initialEnvDataDir) {
     await waitForWindowCondition(window, "Boolean(document.querySelector('[data-testid=\"data-dir-env-lock\"]'))", "desktop data directory env lock", 45_000);
     const lockState = await window.webContents.executeJavaScript(`(async () => {
-      const status = await window.vectorForgeDesktop.getDataDirectoryStatus();
-      const saveError = await window.vectorForgeDesktop.saveDataDirectory(status.defaultDataDir + '-other').then(
+      const status = await window.KnowledgeForgeDesktop.getDataDirectoryStatus();
+      const saveError = await window.KnowledgeForgeDesktop.saveDataDirectory(status.defaultDataDir + '-other').then(
         () => '',
         (error) => String(error?.message || error)
       );
-      const resetError = await window.vectorForgeDesktop.resetDataDirectory().then(
+      const resetError = await window.KnowledgeForgeDesktop.resetDataDirectory().then(
         () => '',
         (error) => String(error?.message || error)
       );
-      const choose = await window.vectorForgeDesktop.chooseDataDirectory();
+      const choose = await window.KnowledgeForgeDesktop.chooseDataDirectory();
       return {
         status,
         inputDisabled: Boolean(document.querySelector('[data-testid="data-dir-input"]')?.disabled),
@@ -378,7 +378,7 @@ async function runDataDirSmoke(url) {
       throw new Error(`Env override UI controls were not locked: ${JSON.stringify(lockState)}`);
     }
     if (lockState.choose?.reason !== "env-override") throw new Error(`Choose directory did not return env override reason: ${JSON.stringify(lockState.choose)}`);
-    if (!lockState.saveError.includes("VECTOR_FORGE_DATA_DIR is set") || !lockState.resetError.includes("VECTOR_FORGE_DATA_DIR is set")) {
+    if (!lockState.saveError.includes("KNOWLEDGE_FORGE_DATA_DIR is set") || !lockState.resetError.includes("KNOWLEDGE_FORGE_DATA_DIR is set")) {
       throw new Error(`Env override IPC guards did not reject save/reset: ${JSON.stringify(lockState)}`);
     }
     const payload = { ok: true, mode: "env-lock", url, userData: app.getPath("userData"), envDataDir: initialEnvDataDir, lockState };
@@ -390,7 +390,7 @@ async function runDataDirSmoke(url) {
   await waitForWindowCondition(window, "Boolean(document.querySelector('[data-testid=\"data-dir-input\"]:not(:disabled)'))", "editable desktop data directory input");
   await waitForWindowCondition(
     window,
-    "window.vectorForgeDesktop.getDataDirectoryStatus().then((status) => Boolean(status.selectedDataDir || status.activeDataDir || status.defaultDataDir))",
+    "window.KnowledgeForgeDesktop.getDataDirectoryStatus().then((status) => Boolean(status.selectedDataDir || status.activeDataDir || status.defaultDataDir))",
     "desktop data directory status initialized",
     45_000
   );
@@ -418,7 +418,7 @@ async function runDataDirSmoke(url) {
   }
   const customDir = path.join(app.getPath("userData"), "custom-data-root");
   const result = await window.webContents.executeJavaScript(`(async () => {
-    const initial = await window.vectorForgeDesktop.getDataDirectoryStatus();
+    const initial = await window.KnowledgeForgeDesktop.getDataDirectoryStatus();
     const inputs = Array.from(document.querySelectorAll('[data-testid="data-dir-input"]:not(:disabled)'));
     if (!inputs.length) throw new Error('Missing editable desktop data directory input');
     for (const input of inputs) {
@@ -441,7 +441,7 @@ async function runDataDirSmoke(url) {
     }
     saveButton.click();
     for (let i = 0; i < 40; i += 1) {
-      const status = await window.vectorForgeDesktop.getDataDirectoryStatus();
+      const status = await window.KnowledgeForgeDesktop.getDataDirectoryStatus();
       if (status.pendingRelaunch && status.pendingDataDir === ${JSON.stringify(customDir)}) {
         return { initial, saved: status, panelText: document.querySelector('.desktop-data-dir-panel')?.innerText || '' };
       }
@@ -496,7 +496,7 @@ async function runDataDirSmoke(url) {
     }
     resetButton.click();
     for (let i = 0; i < 40; i += 1) {
-      const status = await window.vectorForgeDesktop.getDataDirectoryStatus();
+      const status = await window.KnowledgeForgeDesktop.getDataDirectoryStatus();
       if (!status.pendingRelaunch && !status.persistedDataDir && status.selectedDataDir === status.defaultDataDir && status.activeDataDir === status.defaultDataDir) {
         return {
           status,
@@ -597,8 +597,8 @@ async function installPostProbe(window, name, patternSources) {
     await window.webContents.executeJavaScript(`(() => {
       const probeName = ${JSON.stringify(name)};
       window[probeName] = [];
-      window.__vectorForgeProbeOriginalFetch = window.__vectorForgeProbeOriginalFetch || window.fetch.bind(window);
-      const originalFetch = window.__vectorForgeProbeOriginalFetch;
+      window.__KnowledgeForgeProbeOriginalFetch = window.__KnowledgeForgeProbeOriginalFetch || window.fetch.bind(window);
+      const originalFetch = window.__KnowledgeForgeProbeOriginalFetch;
       const patterns = ${JSON.stringify(patternSources)}.map((source) => new RegExp(source));
       window.fetch = async (input, init = {}) => {
         const targetUrl = typeof input === 'string' ? input : input.url;
@@ -627,9 +627,9 @@ async function readPostProbe(window, name) {
 async function restorePostProbe(window) {
   try {
     await window.webContents.executeJavaScript(`(() => {
-      if (window.__vectorForgeProbeOriginalFetch) {
-        window.fetch = window.__vectorForgeProbeOriginalFetch;
-        delete window.__vectorForgeProbeOriginalFetch;
+      if (window.__KnowledgeForgeProbeOriginalFetch) {
+        window.fetch = window.__KnowledgeForgeProbeOriginalFetch;
+        delete window.__KnowledgeForgeProbeOriginalFetch;
       }
       return true;
     })()`);
@@ -639,11 +639,11 @@ async function restorePostProbe(window) {
 }
 
 function uiSmokeCheckpoint(label) {
-  if (process.env.VECTOR_FORGE_UI_SMOKE_DEBUG === "1") console.error(`[ui-smoke] ${label}`);
+  if (process.env.KNOWLEDGE_FORGE_UI_SMOKE_DEBUG === "1") console.error(`[ui-smoke] ${label}`);
 }
 
 async function runUiSmoke(url) {
-  const window = await createMainWindow(url, { show: process.env.VECTOR_FORGE_UI_SMOKE_SHOW === "1" });
+  const window = await createMainWindow(url, { show: process.env.KNOWLEDGE_FORGE_UI_SMOKE_SHOW === "1" });
   await waitForWindowCondition(window, "document.body.innerText.includes('Knowledge Forge')", "app render");
   await waitForWindowCondition(
     window,
@@ -769,7 +769,7 @@ async function runUiSmoke(url) {
     body: JSON.stringify(configuredForAiGuard),
   });
   if (!saveConfigResponse.ok) throw new Error(`Unable to configure UI smoke AnythingLLM config: ${saveConfigResponse.status}`);
-  const documentsPath = path.join(process.env.VECTOR_FORGE_DATA_DIR, `${collection.slug}.documents.json`);
+  const documentsPath = path.join(process.env.KNOWLEDGE_FORGE_DATA_DIR, `${collection.slug}.documents.json`);
   const smokeDocuments = JSON.parse(fs.readFileSync(documentsPath, "utf8"));
   const noteDocument = smokeDocuments.find((item) => item.name === "ui-smoke-note.txt");
   if (!noteDocument) throw new Error("Unable to find UI smoke note document for cleanup manifest setup.");
@@ -791,7 +791,7 @@ async function runUiSmoke(url) {
     ],
   };
   fs.writeFileSync(documentsPath, `${JSON.stringify(smokeDocuments, null, 2)}\n`, "utf8");
-  const cleanupQueuePath = path.join(process.env.VECTOR_FORGE_DATA_DIR, "anythingllm-cleanup-queue.json");
+  const cleanupQueuePath = path.join(process.env.KNOWLEDGE_FORGE_DATA_DIR, "anythingllm-cleanup-queue.json");
   fs.writeFileSync(cleanupQueuePath, `${JSON.stringify({
     version: 1,
     entries: [
@@ -903,8 +903,8 @@ async function runUiSmoke(url) {
   if (
     !mcpResourceUiState.ok
     || mcpResourceUiState.rows !== 7
-    || !mcpResourceUiState.text.includes("vectorforge://embedding-provider/status")
-    || !mcpResourceUiState.text.includes("vectorforge://anythingllm/sync-status")
+    || !mcpResourceUiState.text.includes("KnowledgeForge://embedding-provider/status")
+    || !mcpResourceUiState.text.includes("KnowledgeForge://anythingllm/sync-status")
   ) {
     throw new Error(`MCP resource UI coverage failed: ${JSON.stringify(mcpResourceUiState)}`);
   }
@@ -996,7 +996,7 @@ async function runUiSmoke(url) {
   let sourceBackedDocuments = await waitForDocumentNames(["ui-risk-upload.txt"], "risk upload document");
   uiSmokeCheckpoint("upload document indexed");
 
-  const directorySmokeDir = fs.mkdtempSync(path.join(os.tmpdir(), "vector-forge-ui-dir-source-"));
+  const directorySmokeDir = fs.mkdtempSync(path.join(os.tmpdir(), "knowledge-forge-ui-dir-source-"));
   for (let index = 1; index <= 13; index += 1) {
     fs.writeFileSync(
       path.join(directorySmokeDir, `ui-risk-dir-${String(index).padStart(2, "0")}.txt`),
@@ -1207,7 +1207,7 @@ async function runUiSmoke(url) {
   anythingButtonCoverage.desktopTestCalls = anythingButtonCalls.filter((call) => call.kind === "desktop-test").length;
   uiSmokeCheckpoint("AnythingLLM test buttons clicked");
 
-  const fakeAnythingExeDir = fs.mkdtempSync(path.join(os.tmpdir(), "vector-forge-ui-anything-exe-"));
+  const fakeAnythingExeDir = fs.mkdtempSync(path.join(os.tmpdir(), "knowledge-forge-ui-anything-exe-"));
   const fakeAnythingExePath = path.join(fakeAnythingExeDir, "AnythingLLM.exe");
   fs.writeFileSync(fakeAnythingExePath, "MZ fake AnythingLLM executable for UI smoke");
   await installPostProbe(window, "__anythingExePathCalls", ["\\/api\\/anythingllm\\/exe-path$"]);
@@ -2902,15 +2902,15 @@ async function runUiSmoke(url) {
 async function boot() {
   registerIpcHandlers();
   const url = await startLocalApi();
-  if (process.env.VECTOR_FORGE_DATA_DIR_SMOKE === "1") {
+  if (process.env.KNOWLEDGE_FORGE_DATA_DIR_SMOKE === "1") {
     await runDataDirSmoke(url);
     return;
   }
-  if (process.env.VECTOR_FORGE_UI_SMOKE === "1") {
+  if (process.env.KNOWLEDGE_FORGE_UI_SMOKE === "1") {
     await runUiSmoke(url);
     return;
   }
-  if (process.env.VECTOR_FORGE_DESKTOP_SMOKE === "1") {
+  if (process.env.KNOWLEDGE_FORGE_DESKTOP_SMOKE === "1") {
     await runSmoke(url);
     return;
   }
@@ -2921,7 +2921,7 @@ app.whenReady()
   .then(boot)
   .catch((error) => {
     writeSmokeResult({ ok: false, error: error instanceof Error ? error.message : String(error) });
-    console.error("[vector-forge-desktop] Fatal startup error", error);
+    console.error("[knowledge-forge-desktop] Fatal startup error", error);
     app.exit(1);
   });
 

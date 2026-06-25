@@ -1,21 +1,21 @@
-const { spawn } = require("node:child_process");
+﻿const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 
-const exePath = path.resolve(process.cwd(), "release", "win-unpacked", "Vector Forge Desktop.exe");
+const exePath = path.resolve(process.cwd(), "release", "win-unpacked", "Knowledge Forge.exe");
 if (!fs.existsSync(exePath)) {
   console.error(`Packaged desktop executable not found: ${exePath}`);
   process.exit(1);
 }
 
-const resultPath = path.join(os.tmpdir(), `vector-forge-packaged-smoke-${process.pid}.json`);
+const resultPath = path.join(os.tmpdir(), `knowledge-forge-packaged-smoke-${process.pid}.json`);
 const child = spawn(exePath, [], {
   cwd: path.dirname(exePath),
   env: {
     ...process.env,
-    VECTOR_FORGE_DESKTOP_SMOKE: "1",
-    VECTOR_FORGE_DESKTOP_SMOKE_RESULT: resultPath,
+    KNOWLEDGE_FORGE_DESKTOP_SMOKE: "1",
+    KNOWLEDGE_FORGE_DESKTOP_SMOKE_RESULT: resultPath,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
