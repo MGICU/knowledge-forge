@@ -1,3 +1,10 @@
+## 0.3.3 - 2026-06-25
+
+- Fixed MCP resource URI casing: `KnowledgeForge://` resources now registered with lowercase `knowledgeforge://` to match MCP SDK's case-insensitive readResource lookup. All MCP smoke tests pass.
+- Fixed ESLint warning: wrapped `openImportPicker` in proper dependency pattern.
+- Built and verified Windows dist artifacts: NSIS installer, portable exe, and zip package all generated successfully.
+- Verified 16/16 smoke tests pass: buttons, persistence, upload, documents, directory, security, AI tools, MCP, MCP writes, embedding provider, AnythingLLM, AnythingLLM desktop, jobs, onboarding, local action token, and release artifacts.
+
 ## 0.3.2 - 2026-06-25
 
 - Added keyboard shortcuts modal: press `?` to view all shortcuts (Ctrl+K search, Ctrl+Shift+I import, Esc close, ? toggle panel).
