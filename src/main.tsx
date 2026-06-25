@@ -1078,6 +1078,7 @@ function App() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shortcutsPanelOpen, documentDetail, pendingBatchDeleteIds, pendingDeleteDocument, showCreateCollectionDialog, showQualityReport]);
 
   function patchConfig(updater: (draft: AppConfig) => AppConfig) {
@@ -1108,7 +1109,7 @@ function App() {
       return;
     }
     fileInputRef.current?.click();
-  }
+    }
 
   function pushAiMessage(role: AiMessage["role"], text: string, detail?: string) {
     setAiMessages((current) => [
