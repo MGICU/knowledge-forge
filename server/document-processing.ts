@@ -21,6 +21,7 @@ export type ParserType =
   | "image-ocr"
   | "xlsx"
   | "pptx"
+  | "epub"
   | "unknown";
 
 export type ExtractionPage = {
@@ -247,6 +248,81 @@ async function extractPptx(buffer: Buffer): Promise<Omit<ExtractionResult, "mime
   };
 }
 
+
+async function extractEpub(buffer: Buffer): Promise<Omit<ExtractionResult, "mime" | "contentHash" | "originalSizeBytes">> {
+  const JSZip = (await import("jszip")).default;
+  const zip = await JSZip.loadAsync(buffer);
+
+  const containerFile = zip.file("META-INF/container.xml");
+  if (!containerFile) throw new Error("Invalid EPUB: missing META-INF/container.xml");
+
+  const containerXml = await containerFile.async("string");
+  const opfMatch = containerXml.match(/full-path="([^"]+)"/);
+  if (!opfMatch) throw new Error("Invalid EPUB: could not find OPF path in container.xml");
+
+  const opfPath = opfMatch[1];
+  const opfFile = zip.file(opfPath);
+  if (!opfFile) throw new Error(`Invalid EPUB: OPF file not found at ${opfPath}`);
+
+  const opfXml = await opfFile.async("string");
+  const spineItems = [...opfXml.matchAll(/<itemref[^>]*idref="([^"]+)"/g)].map((m) => m[1]);
+  const manifestItems = new Map<string, string>();
+  for (const m of opfXml.matchAll(/<item[^>]*id="([^"]+)"[^>]*href="([^"]+)"[^>]*media-type="([^"]+)"/g)) {
+    manifestItems.set(m[1], m[2]);
+  }
+
+  const opfDir = opfPath.includes("/") ? opfPath.slice(0, opfPath.lastIndexOf("/") + 1) : "";
+  const pages: ExtractionPage[] = [];
+  let fullText = "";
+
+  for (const idref of spineItems) {
+    const href = manifestItems.get(idref);
+    if (!href) continue;
+    const contentPath = opfDir + href;
+    const contentFile = zip.file(contentPath);
+    if (!contentFile) continue;
+
+    const html = await contentFile.async("string");
+    const text = html
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&[a-z]+;/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (text) {
+      pages.push({
+        pageNumber: pages.length + 1,
+        text,
+        extractor: "epub",
+        confidence: 100,
+      });
+      fullText += text + "\n\n";
+    }
+  }
+
+  return {
+    text: fullText.trim(),
+    pages,
+    parserType: "epub",
+    parserVersion: "epub-1.0",
+    pageCount: pages.length,
+    ocrEngine: undefined,
+    ocrLanguage: undefined,
+    ocrConfidence: null,
+    warnings: pages.length === 0 ? ["No readable content found in EPUB"] : [],
+    extractedTextBytes: Buffer.byteLength(fullText, "utf-8"),
+  };
+}
+
 export async function extractDocument(input: ExtractInput): Promise<ExtractionResult> {
   const config = normalizeParserConfig(input.config);
   input.onProgress?.({ phase: "extracting", progress: 0.05, message: "读取文件" });
@@ -273,6 +349,9 @@ export async function extractDocument(input: ExtractInput): Promise<ExtractionRe
   }
   if (extension === ".pptx" || mime === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
     return { ...base, ...(await extractPptx(buffer)) };
+  }
+  if (extension === ".epub" || mime === "application/epub+zip") {
+    return { ...base, ...(await extractEpub(buffer)) };
   }
   if (extension === ".docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
     return { ...base, ...(await extractDocx(buffer, config, input.onProgress)) };

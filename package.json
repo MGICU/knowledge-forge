@@ -42,6 +42,7 @@
     "smoke:persistence": "tsx server/persistence-smoke.ts",
     "smoke:upload": "tsx server/upload-smoke.ts",
     "smoke:documents": "tsx server/document-smoke.ts",
+    "smoke:epub": "tsx server/epub-smoke.ts",
     "smoke:directory": "tsx server/directory-smoke.ts",
     "smoke:onboarding": "tsx server/onboarding-smoke.ts",
     "smoke:anythingllm": "tsx server/anythingllm-sync-smoke.ts",

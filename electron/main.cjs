@@ -1968,10 +1968,12 @@ async function runUiSmoke(url) {
     throw new Error(`AnythingLLM sync did not call the expected endpoint after confirmation: ${JSON.stringify(syncConfirmed)}`);
   }
   await navigateSmokePage(window, "documents", ".docs-panel");
+  await waitForWindowCondition(window, "!document.querySelector('.global-loading-bar')", "loading bar cleared after sync", 20000);
   await waitForWindowCondition(
     window,
     "Boolean(Array.from(document.querySelectorAll('.doc-row')).find((row) => row.innerText.includes('ui-smoke-delete.txt'))?.querySelector('input[type=\"checkbox\"]:not(:disabled)'))",
-    "AnythingLLM sync returned UI to selectable document state"
+    "AnythingLLM sync returned UI to selectable document state",
+    20000
   );
   await window.webContents.executeJavaScript(`(() => {
     if (window.__syncConfirmOriginalFetch) window.fetch = window.__syncConfirmOriginalFetch;

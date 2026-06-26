@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import {
   AlertCircle,
@@ -33,7 +33,7 @@ import "./styles.css";
 type EmbeddingProviderType = "local-hash" | "openai-compatible";
 type OcrMode = "auto" | "tesseract" | "paddleocr" | "cloud";
 type DuplicateStrategy = "skip" | "version" | "replace";
-type ParserType = "text" | "html" | "json" | "csv" | "pdf-text" | "pdf-ocr" | "docx" | "xlsx" | "pptx" | "image-ocr" | "unknown";
+type ParserType = "text" | "html" | "json" | "csv" | "pdf-text" | "pdf-ocr" | "docx" | "xlsx" | "pptx" | "epub" | "image-ocr" | "unknown";
 type DocumentStatus = "pending" | "extracting" | "ocr" | "chunking" | "embedding" | "indexed" | "failed" | "skipped";
 type Tone = "neutral" | "good" | "warn" | "bad" | "active";
 type SectionId = "overview" | "ai" | "collections" | "search" | "jobs" | "documents" | "parsers" | "mcp" | "anythingllm" | "settings";
@@ -552,7 +552,7 @@ type PendingProcessingAction = {
   documentIds?: string[];
 };
 
-const supportedFormats = ".txt,.md,.markdown,.json,.html,.htm,.csv,.tsv,.xml,.log,.yaml,.yml,.pdf,.docx,.pptx,.xlsx,.xls,.png,.jpg,.jpeg,.webp,.tif,.tiff,.bmp";
+const supportedFormats = ".txt,.md,.markdown,.json,.html,.htm,.csv,.tsv,.xml,.log,.yaml,.yml,.pdf,.docx,.pptx,.xlsx,.xls,.png,.jpg,.jpeg,.webp,.tif,.tiff,.epub,.bmp";
 const mcpResourceCatalog = [
   { uri: "knowledgeforge://health", label: "Health", description: "API 健康、版本、LanceDB 和脱敏配置摘要。" },
   { uri: "knowledgeforge://collections", label: "Collections", description: "本地知识库列表。" },
@@ -573,6 +573,7 @@ const parserLabel: Record<string, string> = {
   docx: "DOCX",
   xlsx: "XLSX",
   pptx: "PPTX",
+   epub: "EPUB",
   "image-ocr": "图片",
   unknown: "未知",
 };
@@ -3284,7 +3285,7 @@ function MetricGrid(props: { collections: number; documents: number; chunks: num
   return (
     <section className="metric-grid">
       <MetricCard color="blue" label="知识库" value={String(props.collections)} caption="创建时复制默认参数" />
-      <MetricCard color="green" label="文档" value={String(props.documents)} caption="PDF / DOCX / XLSX / PPTX / 图片" />
+      <MetricCard color="green" label="文档" value={String(props.documents)} caption="PDF / DOCX / XLSX / PPTX / EPUB / 图片" />
       <MetricCard color="violet" label="Chunks" value={formatCount(props.chunks)} caption="LanceDB 已索引" />
       <MetricCard color="orange" label="任务" value={String(props.runningJobs)} caption={props.failedDocuments ? `${props.failedDocuments} 个失败需处理` : "OCR 队列运行中"} />
     </section>
