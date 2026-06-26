@@ -1969,6 +1969,7 @@ async function runUiSmoke(url) {
   }
   await navigateSmokePage(window, "documents", ".docs-panel");
   await waitForWindowCondition(window, "!document.querySelector('.global-loading-bar')", "loading bar cleared after sync", 20000);
+  await waitForWindowCondition(window, "Array.from(document.querySelectorAll('.doc-row')).some((row) => row.innerText.includes('ui-smoke-delete.txt'))", "delete smoke document visible after sync", 20000);
   await waitForWindowCondition(
     window,
     "Boolean(Array.from(document.querySelectorAll('.doc-row')).find((row) => row.innerText.includes('ui-smoke-delete.txt'))?.querySelector('input[type=\"checkbox\"]:not(:disabled)'))",

@@ -97,7 +97,7 @@ async function createEpub(title: string, chapters: { heading: string; body: stri
     <dc:language>en</dc:language>
   </metadata>
   <manifest>
-${itemIds.map((id, i) => `    <item id="${id}" href="${id}.xhtml" media-type="application/xhtml+xml"/>`).join("\n")}
+${itemIds.map((id) => `    <item id="${id}" href="${id}.xhtml" media-type="application/xhtml+xml"/>`).join("\n")}
   </manifest>
   <spine>
 ${itemIds.map((id) => `    <itemref idref="${id}"/>`).join("\n")}
