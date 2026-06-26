@@ -1,6 +1,6 @@
 ﻿# Knowledge Forge
 
-Version: `0.3.1`
+Version: `0.3.4`
 
 Knowledge Forge is a local-first knowledge base for people who want to turn messy files into searchable AI-ready memory without handing every document to a cloud service.
 
@@ -47,20 +47,47 @@ Use Knowledge Forge when you want:
 
 This is not trying to be another generic chat app. The first-class experience is building and operating the local vector library: import, inspect, search, reprocess, sync, and audit.
 
-## Screens And Workflow
+## Screenshots
 
-The UI is organized as independent pages from the left sidebar:
+### AI Control Console
+![AI Control](docs/screenshots/01-ai-control.png)
 
-- Overview: health, active collection, document/chunk totals, and task status
-- AI Control: conversational command handling with policy dry-run and confirmation
-- Collections: create, choose, inspect, and manage local knowledge bases
-- Local Search: query the current collection and copy citations
-- Import Jobs: watch queued/running/failed/cancelled processing tasks
-- Documents: inspect documents, chunks, text previews, OCR warnings, and delete/reprocess actions
-- OCR / Parser: tune duplicate strategy, PDF limits, OCR mode, OCR language, confidence, and engine settings
-- MCP: inspect read-only resources and copy resource URIs
-- AnythingLLM: configure API/workspace sync, desktop executable, installer handoff, and cleanup queue
-- Settings: desktop data directory, embedding provider, default parameter template, and system integration
+*Conversational command panel: type natural-language instructions to import files, search collections, test configs, or trigger sync — with dry-run preview and confirmation gates for dangerous operations.*
+
+### Collections Management
+![Collections](docs/screenshots/02-collections.png)
+
+*Create and manage independent knowledge bases. Each collection holds its own embedding, chunking, OCR, and AnythingLLM sync parameters — changing the default template won't silently break existing indexes.*
+
+### Local Vector Search
+![Search](docs/screenshots/03-search.png)
+
+*Query your local LanceDB vector store. Results show matched chunks, source documents, relevance scores, parser metadata, and copyable citations. No cloud API required.*
+
+### Import Jobs & Task Queue
+![Import Jobs](docs/screenshots/04-import-jobs.png)
+
+*Watch your files move through queued → extracting → OCR → chunking → embedding → indexed. Cancel, retry, and drill into failed jobs with full stage visibility.*
+
+### Document Management
+![Documents](docs/screenshots/05-documents.png)
+
+*Inspect every document: metadata, extracted text preview, chunk list, OCR warnings, failure reasons, and per-document reprocess/replace/archive actions.*
+
+### OCR & Parser Configuration
+![OCR Config](docs/screenshots/06-ocr-config.png)
+
+*Tune duplicate strategy, PDF limits, OCR mode (Tesseract/Paddle/Cloud), language, confidence thresholds, and engine settings per collection.*
+
+### MCP Integration
+![MCP](docs/screenshots/07-mcp.png)
+
+*Expose your local knowledge base to Claude Desktop, Cursor, Codex, and other MCP clients. Read-only by default; write tools require explicit opt-in.*
+
+### Settings & Integration
+![Settings](docs/screenshots/08-settings.png)
+
+*Manage data directory, embedding providers, default parameter templates, AnythingLLM desktop path, and system integration settings.*
 
 ## Architecture
 
@@ -212,7 +239,7 @@ High-impact next slices:
 
 ## Status
 
-`0.3.1` is an active preview. Core local ingestion, OCR, vector search, MCP read access, AnythingLLM sync, and Windows desktop packaging workflows are implemented; APIs and UX may continue to change before a stable release.
+`0.3.4` is an active preview. Core local ingestion, OCR, vector search, MCP read access, AnythingLLM sync, and Windows desktop packaging workflows are implemented; APIs and UX may continue to change before a stable release.
 
 The current design priority is practical reliability: every visible button should either perform a real action, open a confirmation, show a clear disabled reason, or be covered by smoke tests.
 

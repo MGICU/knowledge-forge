@@ -45,6 +45,48 @@ Knowledge Forge 是一个本地优先的 AI 知识库桌面应用。它把散乱
 
 这些问题解决好，AI 知识库才真正可用。
 
+## 界面截图
+
+### AI 控制台
+![AI 控制](docs/screenshots/01-ai-control.png)
+
+*对话式命令面板：用自然语言指令导入文件、搜索知识库、测试配置或触发同步，危险操作先预览再确认。*
+
+### 知识库管理
+![知识库](docs/screenshots/02-collections.png)
+
+*创建和管理独立知识库。每个知识库拥有自己的 embedding、chunk、OCR 和 AnythingLLM 同步参数，修改全局模板不会影响已有索引。*
+
+### 本地向量检索
+![本地检索](docs/screenshots/03-search.png)
+
+*查询本地 LanceDB 向量库。结果展示匹配片段、来源文档、相关性分数、解析器元数据和可复制的引用。无需云端 API。*
+
+### 导入任务队列
+![导入任务](docs/screenshots/04-import-jobs.png)
+
+*实时查看文件处理流程：排队 → 提取 → OCR → 切片 → embedding → 入库。支持取消、重试和失败详情查看。*
+
+### 文档管理
+![文档管理](docs/screenshots/05-documents.png)
+
+*查看每份文档的元数据、提取文本预览、chunk 列表、OCR 警告和失败原因，支持单文档重处理、替换和归档。*
+
+### OCR 与解析配置
+![OCR 配置](docs/screenshots/06-ocr-config.png)
+
+*配置重复策略、PDF 限制、OCR 模式（Tesseract/Paddle/云服务）、语言、置信度阈值和引擎参数。*
+
+### MCP 集成
+![MCP](docs/screenshots/07-mcp.png)
+
+*将本地知识库暴露给 Claude Desktop、Cursor、Codex 等 MCP 客户端。默认只读，写入需显式开启。*
+
+### 设置与集成
+![设置](docs/screenshots/08-settings.png)
+
+*管理数据目录、embedding provider、默认参数模板、AnythingLLM 桌面路径和系统集成设置。*
+
 ## 快速开始
 
 ```powershell
